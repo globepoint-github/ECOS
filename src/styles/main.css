@@ -325,6 +325,7 @@ html, body, #root {
   position: relative;
   width: 30%;
   aspect-ratio: 837 / 698;
+  transform: translate(-3%, -17%);
 }
 
 .lockedPopupImg {
@@ -335,32 +336,31 @@ html, body, #root {
 
 .lockedPopupClose {
   position: absolute;
-  top: 33%;
+  top: 39%;
   right: 6%;
-  width: 6%;
+  width: 3%;  /* 24.2 / 837, per Figma spec */
   aspect-ratio: 1 / 1;
   border: none;
   background: transparent;
-  color: #ffffff;
-  font-size: clamp(14px, 2vw, 22px);
-  line-height: 1;
+  padding: 0;
   cursor: pointer;
 }
 
 .lockedPopupBtn {
   position: absolute;
-  left: 50%;
-  top: 74%;
+  left: 48%;
+  top: 77%;
   transform: translateX(-50%);
-  width: 34%;
-  height: 10.5%;
+  width: 22.86%;  /* 191.3 / 837, per Figma spec */
+  height: 9.39%;  /* 65.5 / 698, per Figma spec */
   border: 2.74px solid #ffe30b;
   border-radius: 999px;
   background-color: #fffce0;
   color: #e38c00;
   font-family: 'OneStoreMobilePop', 'Noto Sans KR', sans-serif;
   font-weight: normal;
-  font-size: clamp(12px, 1.3vw, 18px);
+  font-size: clamp(16px, 1.7vw, 25px);
+  letter-spacing: 0.02em; /* 2% per Figma spec */
   cursor: pointer;
   transition: transform 0.15s ease, filter 0.15s ease;
 }

@@ -170,7 +170,12 @@ export default function NormalStagePage() {
             <div className="lockedPopupOverlay" onClick={() => setShowLockedPopup(false)}>
               <div className="lockedPopup" onClick={(e) => e.stopPropagation()}>
                 <img src="/images/Group 1000014528.png" alt="이전 미션을 완료해주세요" className="lockedPopupImg" />
-                <button type="button" className="lockedPopupClose" onClick={() => setShowLockedPopup(false)}>×</button>
+                <button type="button" className="lockedPopupClose" onClick={() => setShowLockedPopup(false)}>
+                  <svg viewBox="0 0 24 24" width="100%" height="100%">
+                    <line x1="2.5" y1="2.5" x2="21.5" y2="21.5" stroke="#ffffff" strokeWidth="5" strokeLinecap="round" />
+                    <line x1="21.5" y1="2.5" x2="2.5" y2="21.5" stroke="#ffffff" strokeWidth="5" strokeLinecap="round" />
+                  </svg>
+                </button>
                 <button type="button" className="lockedPopupBtn" onClick={() => setShowLockedPopup(false)}>닫기</button>
               </div>
             </div>
