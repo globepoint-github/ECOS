@@ -309,3 +309,63 @@ html, body, #root {
     left: 80%;
   }
 }
+
+/* ===== Locked-stage popup ("이전 미션을 완료해주세요") ===== */
+.lockedPopupOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.lockedPopup {
+  position: relative;
+  width: 30%;
+  aspect-ratio: 837 / 698;
+}
+
+.lockedPopupImg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.lockedPopupClose {
+  position: absolute;
+  top: 33%;
+  right: 6%;
+  width: 6%;
+  aspect-ratio: 1 / 1;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: clamp(14px, 2vw, 22px);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lockedPopupBtn {
+  position: absolute;
+  left: 50%;
+  top: 74%;
+  transform: translateX(-50%);
+  width: 34%;
+  height: 10.5%;
+  border: 2.74px solid #ffe30b;
+  border-radius: 999px;
+  background-color: #fffce0;
+  color: #e38c00;
+  font-family: 'OneStoreMobilePop', 'Noto Sans KR', sans-serif;
+  font-weight: normal;
+  font-size: clamp(12px, 1.3vw, 18px);
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.lockedPopupBtn:hover {
+  transform: translateX(-50%) scale(1.05);
+  filter: brightness(1.05);
+}

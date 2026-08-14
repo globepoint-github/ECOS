@@ -82,6 +82,15 @@ export default function NormalStagePage() {
   const [unlocked, setUnlocked] = useState(() => new Set([1]))
   const [cert1Active, setCert1Active] = useState(false)
   const [cert2Active, setCert2Active] = useState(false)
+  const [showLockedPopup, setShowLockedPopup] = useState(false)
+
+  function handleStageClick(n) {
+    if (!unlocked.has(n)) {
+      setShowLockedPopup(true)
+      return
+    }
+    activateStage(n)
+  }
 
   function activateStage(n) {
     setCurrentStage(n)
@@ -129,7 +138,7 @@ export default function NormalStagePage() {
               src={lockSrcFor(n)}
               alt={String(n)}
               className={`lockBubble bubble${n}${currentStage === n ? ` active lock${n}` : ''}`}
-              onClick={() => activateStage(n)}
+              onClick={() => handleStageClick(n)}
             />
           ))}
 
@@ -156,6 +165,16 @@ export default function NormalStagePage() {
             alt="인증서 받기"
             className="certBtn cert2"
           />
+
+          {showLockedPopup && (
+            <div className="lockedPopupOverlay" onClick={() => setShowLockedPopup(false)}>
+              <div className="lockedPopup" onClick={(e) => e.stopPropagation()}>
+                <img src="/images/Group 1000014528.png" alt="이전 미션을 완료해주세요" className="lockedPopupImg" />
+                <button type="button" className="lockedPopupClose" onClick={() => setShowLockedPopup(false)}>×</button>
+                <button type="button" className="lockedPopupBtn" onClick={() => setShowLockedPopup(false)}>닫기</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
