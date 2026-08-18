@@ -77,7 +77,7 @@ const CONNECTOR_PAIRS = [
   ['conn-6-7', 6],
 ]
 
-export default function NormalStagePage() {
+export default function NormalStagePage({ gamePath = '/game' }) {
   const [currentStage, setCurrentStage] = useState(null)
   const [unlocked, setUnlocked] = useState(() => new Set([1]))
   const [cert1Active, setCert1Active] = useState(false)
@@ -90,6 +90,8 @@ export default function NormalStagePage() {
       return
     }
     activateStage(n)
+    // 클릭 핸들러 안에서 바로 동기 호출 → 팝업 차단 안 걸림
+    window.open(`${gamePath}/index.html?step=${n}`, '_blank')
   }
 
   function activateStage(n) {
