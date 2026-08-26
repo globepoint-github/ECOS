@@ -84,6 +84,7 @@ export default function NormalStagePage({ gamePath = '/game' }) {
   const [cert1Active, setCert1Active] = useState(false)
   const [cert2Active, setCert2Active] = useState(false)
   const [showLockedPopup, setShowLockedPopup] = useState(false)
+  const [showCertLockedPopup, setShowCertLockedPopup] = useState(false)
 
   function handleStageClick(n) {
     if (!unlocked.has(n)) {
@@ -162,13 +163,21 @@ export default function NormalStagePage({ gamePath = '/game' }) {
             src={cert1Active ? '/images/Group 1000014248 (1).png' : '/images/Group 1000014248.png'}
             alt="인증서 받기"
             className="certBtn cert1"
-            onClick={() => cert1Active && window.open('/certificate/1', '_blank', CERT_POPUP_FEATURES)}
+            onClick={() =>
+              cert1Active
+                ? window.open('/certificate/1', '_blank', CERT_POPUP_FEATURES)
+                : setShowCertLockedPopup(true)
+            }
           />
           <img
             src={cert2Active ? '/images/Group 1000014249.png' : '/images/Group 1000014248.png'}
             alt="인증서 받기"
             className="certBtn cert2"
-            onClick={() => cert2Active && window.open('/certificate/2', '_blank', CERT_POPUP_FEATURES)}
+            onClick={() =>
+              cert2Active
+                ? window.open('/certificate/2', '_blank', CERT_POPUP_FEATURES)
+                : setShowCertLockedPopup(true)
+            }
           />
 
           {showLockedPopup && (
@@ -182,6 +191,21 @@ export default function NormalStagePage({ gamePath = '/game' }) {
                   </svg>
                 </button>
                 <button type="button" className="lockedPopupBtn" onClick={() => setShowLockedPopup(false)}>닫기</button>
+              </div>
+            </div>
+          )}
+
+          {showCertLockedPopup && (
+            <div className="lockedPopupOverlay" onClick={() => setShowCertLockedPopup(false)}>
+              <div className="lockedPopup certLockedPopup" onClick={(e) => e.stopPropagation()}>
+                <img src="/images/인증서/인증서 팝업.png" alt="인증서 받기 조건 안내" className="lockedPopupImg" />
+                <button type="button" className="lockedPopupClose" onClick={() => setShowCertLockedPopup(false)}>
+                  <svg viewBox="0 0 24 24" width="100%" height="100%">
+                    <line x1="2.5" y1="2.5" x2="21.5" y2="21.5" stroke="#ffffff" strokeWidth="5" strokeLinecap="round" />
+                    <line x1="21.5" y1="2.5" x2="2.5" y2="21.5" stroke="#ffffff" strokeWidth="5" strokeLinecap="round" />
+                  </svg>
+                </button>
+                <button type="button" className="lockedPopupBtn" onClick={() => setShowCertLockedPopup(false)}>닫기</button>
               </div>
             </div>
           )}
