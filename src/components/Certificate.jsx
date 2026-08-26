@@ -97,8 +97,8 @@ export default function Certificate({
     printWindow.document.write(`
       <html>
         <head><title>인증서 인쇄</title></head>
-        <body style="margin:0;display:flex;align-items:center;justify-content:center;">
-          <img src="${dataUrl}" style="width:100%;height:auto;" onload="window.print()" />
+        <body style="margin:0;display:flex;align-items:flex-start;justify-content:center;">
+          <img src="${dataUrl}" style="width:100%;max-width:${CANVAS_W}px;height:auto;display:block;" onload="window.print()" />
         </body>
       </html>
     `)
