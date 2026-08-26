@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 const DEFAULT_ROCKET = '/images/제목 없음-3 2.png'
+const CERT_POPUP_FEATURES = 'width=1050,height=700,noopener'
 
 // 스테이지 1개당 필요한 에셋/위치 정보.
 // lockUnlocked가 없는 스테이지(1번)는 자체 파일이 이미 "이용 가능" 색상이라 별도 상태가 없음.
@@ -161,11 +162,13 @@ export default function NormalStagePage({ gamePath = '/game' }) {
             src={cert1Active ? '/images/Group 1000014248 (1).png' : '/images/Group 1000014248.png'}
             alt="인증서 받기"
             className="certBtn cert1"
+            onClick={() => cert1Active && window.open('/certificate/1', '_blank', CERT_POPUP_FEATURES)}
           />
           <img
             src={cert2Active ? '/images/Group 1000014249.png' : '/images/Group 1000014248.png'}
             alt="인증서 받기"
             className="certBtn cert2"
+            onClick={() => cert2Active && window.open('/certificate/2', '_blank', CERT_POPUP_FEATURES)}
           />
 
           {showLockedPopup && (

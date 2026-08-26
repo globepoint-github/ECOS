@@ -5,6 +5,20 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Oagothic';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/OAGothic-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Oagothic';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/OAGothic-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body, #root {
@@ -368,4 +382,105 @@ html, body, #root {
 .lockedPopupBtn:hover {
   transform: translateX(-50%) scale(1.05);
   filter: brightness(1.05);
+}
+
+/* ===== Certificate (인증서) : 별도 브라우저 창(window.open)으로 여는 전용 페이지 ===== */
+.certPage {
+  width: 100vw;
+  height: 100vh;
+  background: #eef3f8;
+  overflow: hidden;
+  position: relative;
+}
+
+.certCard {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  aspect-ratio: 1200 / 800;
+  /* 창이 원본(1200x800)보다 작으면 꽉 채우고(cover), 크면(최대화 등) 1200px에서
+     멈춰서 화질 뭉개짐 없이 가운데에 여백과 함께 표시됨.
+     min-width/max-width를 같이 쓰면 min이 항상 이겨버려서 안 먹혔던 문제를
+     width 하나의 계산식으로 해결: min(1200px, max(가로로 채울 때 필요한 폭, 세로로 채울 때 필요한 폭)) */
+  width: min(1200px, max(100vw, 150vh));
+  container-type: inline-size;
+}
+
+.certCardImg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.certNameInput {
+  position: absolute;
+  left: 44%;   /* 537 / 1200, per Figma spec */
+  top: 39.75%;    /* 318 / 800, per Figma spec */
+  width: 10.5%;   /* 126 / 1200, per Figma spec */
+  height: 5.125%; /* 41 / 800, per Figma spec */
+  border: none;
+  border-radius: 0.25cqw; /* 3 / 1200, per Figma spec */
+  background-color: #d3ff82;
+  color: #000000;
+  font-family: 'Oagothic', 'Noto Sans KR', sans-serif;
+  font-weight: 600;
+  /* 66.5%(스펙) 자간은 "이 름" 두 글자 기준이라 실제 이름 입력 시 넘칠 수 있고,
+     letter-spacing은 마지막 글자 뒤에도 여백이 붙어서 가운데 정렬이 미묘하게 틀어져 보임 →
+     입력값에는 자간을 아예 안 주고, 빈 칸(placeholder)일 때만 스펙 그대로 재현 */
+  font-size: 2.058cqw; /* 24.69 / 1200, per Figma spec */
+  letter-spacing: 0;
+  text-align: center;
+  padding: 0 4px 0 13px;
+}
+
+.certNameInput::placeholder {
+  color: #000000;
+  opacity: 1;
+  letter-spacing: 0.665em; /* 66.5% per Figma spec, "이 름" 원본 자간 그대로 */
+}
+
+.certNameInput:focus {
+  outline: none;
+}
+
+.certDate {
+  position: absolute;
+  left: 45.25%;  /* 543 / 1200, per Figma spec */
+  top: 64.375%;  /* 515 / 800, per Figma spec */
+  color: #000000;
+  font-family: 'Oagothic', 'Noto Sans KR', sans-serif;
+  font-weight: 500; /* ExtraBold(800)는 너무 두꺼워서 원래 스펙 Medium으로 복귀 */
+  font-size: 1.028cqw; /* 12.34 / 1200, per Figma spec */
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.certSaveBtn,
+.certPrintBtn {
+  position: absolute;
+  top: 91.25%;
+  width: 14.5%;  /* 174 / 1200, actual asset size */
+  height: 6%;    /* 48 / 800, actual asset size */
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.certSaveBtn:hover,
+.certPrintBtn:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.certSaveBtn {
+  left: 64.17%;
+}
+
+.certPrintBtn {
+  left: 80.5%;
+}
+
+.certSaveBtn:hover,
+.certPrintBtn:hover {
+  filter: brightness(1.15);
 }
