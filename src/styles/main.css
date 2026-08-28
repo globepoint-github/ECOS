@@ -425,10 +425,12 @@ html, body, #root {
   top: 64.375%;  /* 515 / 800, per Figma spec */
   color: #000000;
   font-family: 'Oagothic', 'Noto Sans KR', sans-serif;
-  font-weight: 500; /* ExtraBold(800)는 너무 두꺼워서 원래 스펙 Medium으로 복귀 */
+  font-weight: 500; /* ExtraBold(800)는 너무 두꺼워서 Medium 유지 */
   font-size: 1.028cqw; /* 12.34 / 1200, per Figma spec */
   letter-spacing: 0;
   white-space: nowrap;
+  /* Medium과 ExtraBold 사이 굵기가 없어서, 글자 테두리를 살짝 씌워 중간 굵기처럼 보이게 함 */
+  -webkit-text-stroke: 0.35px currentColor;
 }
 
 .certSaveBtn,

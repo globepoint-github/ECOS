@@ -37,11 +37,15 @@ async function renderCertificateDataUrl(imageSrc) {
   ctx.drawImage(bg, 0, 0, CANVAS_W, CANVAS_H)
 
   // 오늘 날짜 (항상 실시간 현재 날짜)
+  // Medium과 ExtraBold 사이 굵기가 없어서, 얇은 테두리를 같이 그려 중간 굵기처럼 보이게 함 (CSS -webkit-text-stroke와 동일 처리)
   ctx.fillStyle = '#000000'
+  ctx.strokeStyle = '#000000'
+  ctx.lineWidth = 0.7
   ctx.font = `500 ${DATE_FONT_SIZE}px Oagothic, "Noto Sans KR", sans-serif`
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px'
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
+  ctx.strokeText(todayKorean(), DATE_POS.x, DATE_POS.y)
   ctx.fillText(todayKorean(), DATE_POS.x, DATE_POS.y)
 
   return canvas.toDataURL('image/png')
