@@ -32,7 +32,13 @@ export default function NormalMainPage() {
         <footer className="footer">
           <img src="/images/이솜로고.png" alt="이솜 EBS 소프트웨어 x VRWARE" className="logo" />
           <div className="buttons">
-            <button type="button" className="btnManual" ref={manualRef}>매뉴얼 다운로드</button>
+            <a
+              href="/docs/%5B사용자 매뉴얼%5D 에코스 섬의 비밀.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btnManual"
+              ref={manualRef}
+            >매뉴얼 다운로드</a>
             <button type="button" className="btnStart" ref={startRef} onClick={() => navigate('/stage')}>START</button>
           </div>
         </footer>

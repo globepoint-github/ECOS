@@ -135,6 +135,7 @@ html, body, #root {
   transition: transform 0.15s ease, filter 0.15s ease;
   white-space: nowrap;
   color: #ffffff;
+  text-decoration: none; /* .btnManual이 <a> 태그로 바뀌어도 밑줄 안 생기게 */
 }
 
 .btnManual:hover,
@@ -150,6 +151,9 @@ html, body, #root {
 
 .btnManual {
   background-color: #9254df;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btnStart {

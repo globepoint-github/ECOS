@@ -158,7 +158,13 @@ export default function NormalStagePage({ gamePath = '/game' }) {
             />
           )}
 
-          <img src="/images/Manual download.png" alt="매뉴얼 다운로드" className="selectManualBtn" />
+          <a
+            href="/docs/%5B사용자 매뉴얼%5D 에코스 섬의 비밀.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img src="/images/Manual download.png" alt="매뉴얼 다운로드" className="selectManualBtn" />
+          </a>
           <img
             src={cert1Active ? '/images/Group 1000014248 (1).png' : '/images/Group 1000014248.png'}
             alt="인증서 받기"
