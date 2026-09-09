@@ -1,3 +1,5 @@
+import { withBase } from '../utils/withBase'
+
 // 인증서 배경(1200x800) 안의 날짜 위치 (픽셀 기준, %로 환산해서 CSS에도 동일하게 사용)
 const CANVAS_W = 1200
 const CANVAS_H = 800
@@ -53,8 +55,8 @@ async function renderCertificateDataUrl(imageSrc) {
 
 export default function Certificate({
   imageSrc,
-  saveBtnSrc = '/images/인증서/저장하기버튼.png',
-  printBtnSrc = '/images/인증서/인쇄하기버튼.png',
+  saveBtnSrc = withBase('/images/인증서/저장하기버튼.png'),
+  printBtnSrc = withBase('/images/인증서/인쇄하기버튼.png'),
 }) {
   async function handleSave() {
     const dataUrl = await renderCertificateDataUrl(imageSrc)
