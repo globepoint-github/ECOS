@@ -6,7 +6,7 @@ const TEST_BASE_URL = 'https://dev-www.ebssw.kr:10543'
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || TEST_BASE_URL
 
 // 에코스섬의 비밀 미션 코드
-export const MISSION_CODE = 'es'
+export const MISSION_CODE = 'eco'
 
 // 코딩파티 연도/시즌 (유니티 빌드 StreamingAssets/datas/cp_info.json과 동일한 값)
 export const CP_YEAR = '2026'

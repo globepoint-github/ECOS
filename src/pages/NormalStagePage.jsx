@@ -145,7 +145,10 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
       })
       return next
     })
-    setCurrentStage(Math.max(...completedSteps))
+    // 로켓 위치는 "완료한 단계"가 아니라 "지금부터 진행할 다음 단계"에 표시 (기존 게임들 컨벤션)
+    const highestCompleted = Math.max(...completedSteps)
+    const nextStage = STAGE_DATA[highestCompleted + 1] ? highestCompleted + 1 : highestCompleted
+    setCurrentStage(nextStage)
     if (completedSteps.has(3)) setCert1Active(true)
     if (completedSteps.has(7)) setCert2Active(true)
   }, [])
