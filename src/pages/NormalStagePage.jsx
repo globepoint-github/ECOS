@@ -6,7 +6,10 @@ import { hasSavedCpUserCode, markCpUserCodeSaved } from '../utils/cpUserCode'
 import { withBase } from '../utils/withBase'
 
 const DEFAULT_ROCKET = withBase('/images/제목 없음-3 2.png')
-const CERT_POPUP_FEATURES = 'width=1050,height=700,noopener'
+const CERT_POPUP_FEATURES = 'width=1050,height=700,noopener' // 일반판 가로형(1200x800) 인증서용
+// 코딩파티 세로형(620x880) 인증서. 카드 자체는 이제 항상 620x880 고정 + 가운데 정렬이라
+// 팝업 창 크기를 픽셀 단위로 정확히 안 맞춰도 됨 — 여유 있게 잡아서 절대 안 잘리게만 함
+const CP_CERT_POPUP_FEATURES = 'width=620,height=880,noopener'
 
 // 코딩파티 사용자 코드 (게임 시작 시 1회 선택)
 const CP_USER_CODES = [
@@ -228,6 +231,10 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
   }
 
   const activeStageData = currentStage ? STAGE_DATA[currentStage] : null
+  // 인증서 주소도 코딩파티일 땐 /coding-party/certificate/... 로 열려야 함
+  // (이 값이 없어서 코딩파티에서도 항상 일반판 인증서가 열리던 버그가 있었음)
+  const certPathPrefix = isCodingParty ? '/coding-party' : ''
+  const certPopupFeatures = isCodingParty ? CP_CERT_POPUP_FEATURES : CERT_POPUP_FEATURES
 
   return (
     <div className="page">
@@ -271,7 +278,7 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
           )}
 
           <a
-            href={withBase('/docs/%5B사용자 매뉴얼%5D 에코스 섬의 비밀.pdf')}
+            href={withBase('/docs/manual.pdf')}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -283,7 +290,7 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
             className="certBtn cert1"
             onClick={() =>
               cert1Active
-                ? window.open(withBase('/certificate/1'), '_blank', CERT_POPUP_FEATURES)
+                ? window.open(withBase(`${certPathPrefix}/certificate/1`), '_blank', certPopupFeatures)
                 : setShowCertLockedPopup(true)
             }
           />
@@ -293,7 +300,7 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
             className="certBtn cert2"
             onClick={() =>
               cert2Active
-                ? window.open(withBase('/certificate/2'), '_blank', CERT_POPUP_FEATURES)
+                ? window.open(withBase(`${certPathPrefix}/certificate/2`), '_blank', certPopupFeatures)
                 : setShowCertLockedPopup(true)
             }
           />
@@ -331,7 +338,7 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
           {showCpUserCodePopup && (
             <div className="cpUserCodeOverlay">
               <div className="cpUserCodePopup">
-                <div className="cpUserCodeHeader">코딩파티 사용자 정보</div>
+                <div className="cpUserCodeHeader">아래 정보를 입력해주세요</div>
                 <div className="cpUserCodeForm">
                   <div className="cpUserCodeRow">
                     <span className="cpUserCodeLabel">연령</span>

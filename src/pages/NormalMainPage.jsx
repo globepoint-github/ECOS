@@ -34,7 +34,7 @@ export default function NormalMainPage() {
           <img src={withBase('/images/이솜로고.png')} alt="이솜 EBS 소프트웨어 x VRWARE" className="logo" />
           <div className="buttons">
             <a
-              href={withBase('/docs/%5B사용자 매뉴얼%5D 에코스 섬의 비밀.pdf')}
+              href={withBase('/docs/manual.pdf')}
               target="_blank"
               rel="noopener noreferrer"
               className="btnManual"

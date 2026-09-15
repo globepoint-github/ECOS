@@ -10,4 +10,4 @@ export const MISSION_CODE = 'eco'
 
 // 코딩파티 연도/시즌 (유니티 빌드 StreamingAssets/datas/cp_info.json과 동일한 값)
 export const CP_YEAR = '2026'
-export const CP_SEASON = '1'
+export const CP_SEASON = '2'
