@@ -30,7 +30,11 @@ html, body, #root {
 .banner {
   position: relative;
   width: 100%;
-  height: 100vh;
+  /* 100vh(브라우저 뷰포트 전체)로 고정하면 스테이지 화면(.page)과 같은 이유로,
+     EBS 사이트 상단 헤더와 함께 삽입되는 실제 배포 환경에서 실제 가용 높이보다 크게
+     계산되어 하단 .footer(매뉴얼 다운로드/START 버튼 등)가 잘려 보일 수 있었음.
+     100%로 바꿔 부모가 실제로 내어주는 높이를 그대로 따라가게 함 */
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: #313131;
@@ -43,16 +47,14 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* Fixed 1920:1080 canvas that always covers .bgPicture, same crop
-   behavior as object-fit:cover, so every layer below lines up. */
+/* "항상 꽉 채우기(cover)" 우선 방식. 대신 화면 비율이 16:9에서 많이 벗어나면(초광각
+   모니터/세로로 좁은 창) object-fit:cover 하나만으로는 인물·건물이 심하게 잘리므로,
+   .bgPicture의 실제 가로세로 비율 구간(narrow/default/wide)에 맞게 애초에 그 비율로
+   새로 그린 배경 이미지 자체를 통째로 바꿔 끼움(useAspectVariant 훅, NormalMainPage.jsx).
+   타이틀/행성 오버레이는 배경마다 여백 구도가 달라 구간별로 위치를 따로 잡음(.scene-narrow/-wide). */
 .scene {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  aspect-ratio: 1920 / 1080;
-  min-width: 100%;
-  min-height: 100%;
+  inset: 0;
 }
 
 .bgImage {
@@ -60,21 +62,25 @@ html, body, #root {
   inset: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
   display: block;
 }
 
+/* 기본(16:9 안팎) 위치 — .scene-default에 적용.
+   height는 auto로 둬서(width%만 지정) 이미지 원본 비율(995:258)이 항상 유지되도록 함 —
+   width/height를 둘 다 %로 따로 지정하면 컨테이너 비율에 따라 글자가 찌그러져 보였음 */
 .titleImage {
   position: absolute;
-  left: 33.1%;
+  left: 28.2%;
   top: 15.30%;
-  width: 36.21%;
-  height: 16.18%;
+  width: 44%;
+  height: auto;
 }
 
 .planetLeft {
   position: absolute;
   left: 8.2%;
-  top: 17%;
+  top: 13%;
   width: 11.93%;
   height: auto;
   animation: floatPlanet 4s ease-in-out infinite;
@@ -83,11 +89,30 @@ html, body, #root {
 .planetRight {
   position: absolute;
   left: 75.4%;
-  top: 24.3%;
+  top: 20.3%;
   width: 8.59%;
   height: auto;
   animation: floatPlanet 4.7s ease-in-out infinite;
   animation-delay: -2s;
+}
+
+/* 세로로 좁은 화면(narrow) — 배경 위쪽에 여백이 넓어서 타이틀을 위로, 크게 배치 */
+.scene-narrow .titleImage {
+  left: 16.7%;
+  top: 8%;
+  width: 66.6%;
+}
+
+/* 초광각 화면(wide) — 배경 자체가 짧고 넓어서 타이틀을 작게 배치.
+   오버레이 행성(planetLeft/Right)은 기본 위치(위쪽) 그대로 유지.
+   실제 서비스에서 iframe 높이가 고정(~1084px)인 채 너비만 늘어나는 구조라,
+   창을 조금만 넓혀도(가로 2500px 안팎) 이 wide 구간에 흔히 들어옴 — 진짜 초광각
+   모니터(비율 3.74에 가까운 경우)만 있는 게 아니라 일반 데스크톱에서도 자주 걸리므로
+   16.5%는 너무 작아 보여 34%로 키움 */
+.scene-wide .titleImage {
+  left: 33%;
+  top: 7%;
+  width: 34%;
 }
 
 @keyframes floatPlanet {
@@ -173,7 +198,12 @@ html, body, #root {
 /* ===== Select screen (after START) ===== */
 .page {
   width: 100%;
-  height: 100vh;
+  /* 100vh(브라우저 뷰포트 전체)로 고정하면, 이 화면이 EBS 사이트 안에 상단 헤더/하단 푸터와
+     함께 삽입되는 실제 배포 환경에서 화면 높이를 과대 계산하게 됨 → 아래 .selectStage의
+     overflow:hidden에 의해 로켓/다운로드 버튼처럼 가장자리에 있는 요소가 잘려 보이지 않는
+     버그의 원인이었음. 100%로 바꿔 부모(#root 등)가 실제로 내어주는 높이를 그대로 따라가게 함
+     (단독 실행 시에는 html,body,#root가 100% 체인으로 뷰포트 전체를 채우므로 기존과 동일하게 동작) */
+  height: 100%;
 }
 
 .selectStage {
@@ -190,8 +220,14 @@ html, body, #root {
   left: 50%;
   transform: translate(-50%, -50%);
   aspect-ratio: 1920 / 1080;
-  min-width: 100%;
-  min-height: 100%;
+  /* 이전엔 min-width/min-height:100%로 "cover"(꽉 채우고 넘치는 부분은 자름) 방식이라
+     16:9보다 좁고 낮은 화면(아이패드 등)에서 스테이지 버블/버튼이 잘려나갔음.
+     대신 "contain"(비율 유지한 채 화면 안에 다 들어오게, 남는 자리는 배경색) 방식으로 변경 —
+     가로세로 어떤 비율의 화면이 와도 절대 잘리지 않음.
+     width/height는 CSS(container query)가 아니라 useContainSize 훅이 .selectStage의 실제
+     크기를 ResizeObserver로 재서 인라인 style로 넣어줌 — 이 프로젝트가 쓰는 Chrome 빌드에서
+     container-type:size + cqw/cqh 조합이 간헐적으로 잘못된 크기를 계산하는 버그가 있어서
+     (새로고침마다 될 때/안 될 때가 섞임) 더 안정적인 JS 측정 방식으로 대체함 */
 }
 
 .selectBg {
@@ -317,16 +353,8 @@ html, body, #root {
 .cert1 { left: 30.04%; top: 81%; }
 .cert2 { left: 63.64%; top: 81%; }
 
-/* Tablet range only: scale the whole scene as one unit so every element
-   keeps its exact relative position (same layout as PC, just smaller) */
-@media (min-width: 700px) and (max-width: 1400px) {
-  .selectScene {
-    transform: translate(-50%, -50%) scale(0.85);
-  }
-  .selectManualBtn {
-    left: 80%;
-  }
-}
+/* .selectScene이 이제 비율에 맞춰 자동으로 contain 계산되므로, 태블릿 구간에 별도로
+   축소/위치 보정을 걸어줄 필요가 없어짐 (모든 화면비에서 동일한 16:9 박스로 렌더링됨) */
 
 /* ===== Locked-stage popup ("이전 미션을 완료해주세요") ===== */
 .lockedPopupOverlay {
@@ -599,6 +627,43 @@ html, body, #root {
 
 .cpCertSaveBtn { left: 13%; }
 .cpCertPrintBtn { left: 59%; }
+
+/* 소속기관/이름 입력칸 — 타이틀과 본문 사이 빈 줄, 좌표 미정이라 확인 후 조정 필요 */
+.cpCertInstitutionInput,
+.cpCertNameInput {
+  position: absolute;
+  top: 48.6%; /* 428 / 880 */
+  transform: translateY(-50%);
+  border: none;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.5);
+  background: transparent;
+  color: #000000;
+  font-family: 'Oagothic', 'Noto Sans KR', sans-serif;
+  font-weight: 500;
+  font-size: 2.58cqw; /* 16 / 620 */
+  padding: 0 2px 2px;
+}
+
+.cpCertInstitutionInput:focus,
+.cpCertNameInput:focus {
+  outline: none;
+  border-bottom-color: #419ff2;
+}
+
+.cpCertInstitutionInput {
+  left: 9.7%;  /* 60 / 620 */
+  width: 46%;
+}
+
+.cpCertNameInput {
+  left: 64.5%; /* 400 / 620 */
+  width: 24%;
+}
+
+.cpCertNameInput[readonly] {
+  border-bottom-color: transparent;
+  cursor: default;
+}
 
 .cpCertNoticeOverlay {
   position: fixed;

@@ -7,9 +7,14 @@ import { stringUtil } from './stringUtil'
 const LOGIN_COOKIE = 'cpEcoLoginUser'
 const NON_LOGIN_COOKIE = 'cpEcoNonLoginUser'
 
-// 유니티가 쿠키 값을 그대로 JSON.parse 하는 것으로 보여서, 이 쿠키는
-// encodeURIComponent 없이 순수 JSON 문자열 그대로 저장/조회한다.
-// (인코딩되면 유니티 쪽에서 "%7B..." 형태를 JSON으로 못 읽을 수 있음)
+// 예전엔 "유니티가 쿠키 값을 그대로 JSON.parse 하는 것 같다"는 추정으로
+// encodeURIComponent 없이 순수 JSON 문자열({"cpid":"..."})을 그대로 저장했었음.
+// 그런데 쿠키 값에 큰따옴표(")가 그대로 들어가는 건 쿠키 스펙(RFC 6265)상 원래
+// 허용 안 되는 문자라, 플랫폼 공용 쿠키 처리 과정에서 값이 깨지는 경우가 있었고
+// (다른 게임들 — cpChgNonLoginUser/cpDtiNonLoginUser 등 — 은 전부 URL 인코딩된
+// 채로 정상 동작 중인 걸 보면 이 추정 자체가 틀렸던 것으로 보임), 그 결과
+// "새로고침하면 첫 화면으로 이동" 버그로 이어진 것으로 확인됨.
+// 다른 게임들과 동일하게 encodeURIComponent로 저장/조회하도록 변경.
 function getRawCookie(name) {
   const escaped = name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1')
   const match = document.cookie.match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'))
@@ -18,19 +23,34 @@ function getRawCookie(name) {
 
 function setRawCookie(name, value, days = 365) {
   const expires = new Date(Date.now() + days * 864e5).toUTCString()
-  document.cookie = `${name}=${value}; expires=${expires}; path=/`
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`
+}
+
+// 쿠키 값을 객체로 파싱. 새 방식(URL 인코딩)이 기본이지만, 예전 방식(순수 JSON
+// 문자열)으로 이미 저장된 쿠키가 남아있어도 계속 읽을 수 있어야 함 —
+// decodeURIComponent는 % 문자가 없는 순수 문자열에는 그대로 no-op이라 두 방식 다
+// 안전하게 처리됨. JSON도 아니면 그보다 더 옛날 방식(순수 문자열 cpid)일 수 있으니
+// { cpid: 그 문자열 } 형태로 맞춰서 돌려줌.
+function parseCookieObject(cookieName) {
+  const raw = getRawCookie(cookieName)
+  if (!raw) return null
+  let decoded = raw
+  try {
+    decoded = decodeURIComponent(raw)
+  } catch {
+    // 디코딩 실패(깨진 값 등)하면 원본 그대로 다음 단계에서 시도
+  }
+  try {
+    const parsed = JSON.parse(decoded)
+    if (parsed && typeof parsed === 'object') return parsed
+  } catch {
+    // JSON이 아니면 아래에서 순수 문자열로 처리
+  }
+  return decoded ? { cpid: decoded } : null
 }
 
 function readCpIdFromCookie(cookieName) {
-  const raw = getRawCookie(cookieName)
-  if (!raw) return null
-  try {
-    const parsed = JSON.parse(raw)
-    return parsed?.cpid || null
-  } catch {
-    // 예전 방식(순수 문자열)으로 저장된 값이 남아있을 수 있으니 그대로 반환
-    return raw
-  }
+  return parseCookieObject(cookieName)?.cpid || null
 }
 
 // 쿠키에 cpId가 이미 있으면 그 값을 재사용하고, 없으면 새로 만들어서 저장한다.
@@ -43,4 +63,31 @@ export function getOrCreateCpId(isLoggedIn) {
   const created = stringUtil.random()
   setRawCookie(cookieName, JSON.stringify({ cpid: created }))
   return created
+}
+
+// 연령대(cpUserCode) 선택 시, 같은 cpid 쿠키 안에 cpUserCode를 같이 저장한다.
+// 다른 게임들(예: cpChgNonLoginUser)의 쿠키가 {"cpid":"...","cpUserCode":"001"}
+// 형태로 cpid와 cpUserCode를 한 쿠키에 같이 담는 것과 동일하게 맞춤 — 유니티가
+// 이 쿠키에서 cpUserCode까지 같이 읽으려고 할 가능성이 있어서, 기존처럼 서버
+// API(userInfoSave.do)에만 보내고 쿠키엔 cpid만 남겨두던 방식에서 변경.
+export function saveCpUserCodeToCookie(isLoggedIn, cpUserCode) {
+  const cookieName = isLoggedIn ? LOGIN_COOKIE : NON_LOGIN_COOKIE
+  const existing = parseCookieObject(cookieName) || {}
+  setRawCookie(cookieName, JSON.stringify({ ...existing, cpUserCode }))
+}
+
+// 미션을 하나라도 "클리어"해야만 진행 중으로 치는 게 아니라, 스테이지 화면에
+// 한 번이라도 들어간 적이 있으면(=START를 눌렀으면) 바로 인정해야 함 — 그래서
+// 서버 진행도(getMissionList) 조회 없이, 스테이지 화면 진입 시 이 플래그만 쿠키에
+// 남겨두고 랜딩 화면은 이 값만 동기적으로 확인해서 즉시 이동시킴.
+export function markCpStarted(isLoggedIn) {
+  const cookieName = isLoggedIn ? LOGIN_COOKIE : NON_LOGIN_COOKIE
+  const existing = parseCookieObject(cookieName) || {}
+  if (existing.started) return
+  setRawCookie(cookieName, JSON.stringify({ ...existing, started: true }))
+}
+
+export function hasCpStarted(isLoggedIn) {
+  const cookieName = isLoggedIn ? LOGIN_COOKIE : NON_LOGIN_COOKIE
+  return !!parseCookieObject(cookieName)?.started
 }

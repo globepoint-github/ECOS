@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getMissionList, saveCpUserInfo } from '../api/gameApi'
 import { CP_SEASON, CP_YEAR } from '../api/config'
-import { getOrCreateCpId } from '../utils/cpId'
+import { getOrCreateCpId, markCpStarted, saveCpUserCodeToCookie } from '../utils/cpId'
 import { hasSavedCpUserCode, markCpUserCodeSaved } from '../utils/cpUserCode'
 import { withBase } from '../utils/withBase'
+import { useContainSize } from '../utils/useContainSize'
 
 const DEFAULT_ROCKET = withBase('/images/제목 없음-3 2.png')
 const CERT_POPUP_FEATURES = 'width=1050,height=700,noopener' // 일반판 가로형(1200x800) 인증서용
@@ -109,6 +110,8 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
   const [cpId, setCpId] = useState(null)
   const [showCpUserCodePopup, setShowCpUserCodePopup] = useState(false)
   const [selectedCpUserCode, setSelectedCpUserCode] = useState(CP_USER_CODES[0].code)
+  const selectStageRef = useRef(null)
+  const { width: sceneWidth, height: sceneHeight } = useContainSize(selectStageRef, 1920 / 1080)
 
   const userSn = session?.userSn
 
@@ -119,6 +122,9 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
     if (session.status === 'loading') return
     const id = getOrCreateCpId(session.status === 'SUCCESS')
     setCpId(id)
+    // 이 스테이지 화면에 들어왔다는 것 자체를 쿠키에 남겨둠 — 랜딩 화면(NormalMainPage.jsx)이
+    // 새로고침 후에도 "이미 시작한 사용자"를 바로 여기로 되돌려보내는 데 씀
+    if (isCodingParty) markCpStarted(session.status === 'SUCCESS')
     if (isCodingParty && !hasSavedCpUserCode(id)) setShowCpUserCodePopup(true)
   }, [isCodingParty, session.status])
 
@@ -183,6 +189,9 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
   async function handleSubmitCpUserCode() {
     setShowCpUserCodePopup(false)
     if (!cpId) return
+    // 쿠키에 cpUserCode를 같이 저장 — 다른 게임들처럼 cpid 쿠키 안에 cpUserCode까지
+    // 들어있어야 유니티가 정상적으로 읽는 것으로 보여서(서버 API 저장과는 별개로) 추가
+    saveCpUserCodeToCookie(session.status === 'SUCCESS', selectedCpUserCode)
     try {
       await saveCpUserInfo({
         cpid: cpId,
@@ -238,8 +247,8 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
 
   return (
     <div className="page">
-      <div className="selectStage">
-        <div className="selectScene">
+      <div className="selectStage" ref={selectStageRef}>
+        <div className="selectScene" style={sceneWidth ? { width: sceneWidth, height: sceneHeight } : undefined}>
           <img src={withBase('/images/image 2482.png')} alt="" className="selectBg" />
 
           {CONNECTOR_PAIRS.map(([posClass, sourceStage]) => {

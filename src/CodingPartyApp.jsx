@@ -12,7 +12,7 @@ export default function CodingPartyApp() {
 
   return (
     <Routes>
-      <Route path="/" element={<MainPage />} />
+      <Route path="/" element={<MainPage session={session} />} />
       <Route path="/stage" element={<StagePage session={session} />} />
       <Route path="/certificate/:certId" element={<CertificatePage />} />
     </Routes>
