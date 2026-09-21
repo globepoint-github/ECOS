@@ -21,9 +21,17 @@ function getRawCookie(name) {
   return match ? match[1] : null
 }
 
-function setRawCookie(name, value, days = 365) {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString()
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`
+// CHG 등 다른 게임들과 동일한 만료 정책: 로그인 사용자는 고정 만료일(1년),
+// 비로그인 사용자는 3시간 — 비로그인은 오래 붙잡아둘 이유가 없고, 다른 게임들도
+// 다 이렇게 짧게 만료시키고 있어서 맞춤.
+function cookieExpiresFor(isLoggedIn) {
+  const ms = isLoggedIn ? 365 * 864e5 : 3 * 60 * 60 * 1000
+  return new Date(Date.now() + ms).toUTCString()
+}
+
+function writeCookieObject(isLoggedIn, cookieName, obj) {
+  const expires = cookieExpiresFor(isLoggedIn)
+  document.cookie = `${cookieName}=${encodeURIComponent(JSON.stringify(obj))}; expires=${expires}; path=/`
 }
 
 // 쿠키 값을 객체로 파싱. 새 방식(URL 인코딩)이 기본이지만, 예전 방식(순수 JSON
@@ -61,7 +69,7 @@ export function getOrCreateCpId(isLoggedIn) {
   if (existing) return existing
 
   const created = stringUtil.random()
-  setRawCookie(cookieName, JSON.stringify({ cpid: created }))
+  writeCookieObject(isLoggedIn, cookieName, { cpid: created })
   return created
 }
 
@@ -73,7 +81,7 @@ export function getOrCreateCpId(isLoggedIn) {
 export function saveCpUserCodeToCookie(isLoggedIn, cpUserCode) {
   const cookieName = isLoggedIn ? LOGIN_COOKIE : NON_LOGIN_COOKIE
   const existing = parseCookieObject(cookieName) || {}
-  setRawCookie(cookieName, JSON.stringify({ ...existing, cpUserCode }))
+  writeCookieObject(isLoggedIn, cookieName, { ...existing, cpUserCode })
 }
 
 // 미션을 하나라도 "클리어"해야만 진행 중으로 치는 게 아니라, 스테이지 화면에
@@ -84,7 +92,7 @@ export function markCpStarted(isLoggedIn) {
   const cookieName = isLoggedIn ? LOGIN_COOKIE : NON_LOGIN_COOKIE
   const existing = parseCookieObject(cookieName) || {}
   if (existing.started) return
-  setRawCookie(cookieName, JSON.stringify({ ...existing, started: true }))
+  writeCookieObject(isLoggedIn, cookieName, { ...existing, started: true })
 }
 
 export function hasCpStarted(isLoggedIn) {
