@@ -67,10 +67,16 @@ async function renderCertificateDataUrl(imageSrc, { institution, name }) {
   return canvas.toDataURL('image/png')
 }
 
+// 다운로드 파일명에 쓰기 부적절한 문자(경로 구분자 등) 제거 + 앞뒤 공백 정리
+function sanitizeForFilename(text) {
+  return text.trim().replace(/[\\/:*?"<>|]/g, '')
+}
+
 export default function CodingPartyCertificate({
   imageSrc,
   isLoggedIn = false,
   loginName = '',
+  stageLabel = '기초',
   saveBtnSrc = withBase('/images/인증서/저장하기버튼.png'),
   printBtnSrc = withBase('/images/인증서/인쇄하기버튼.png'),
 }) {
@@ -87,11 +93,17 @@ export default function CodingPartyCertificate({
   // 확인을 눌러야 실제 저장/인쇄가 진행되도록 함
   const [pendingAction, setPendingAction] = useState(null) // 'save' | 'print' | null
 
+  // 파일명 형식: 클릭온AI_게임명_인증서단계_이름 (예: 클릭온AI_에코스섬의비밀_기초_홍길동)
+  function buildDownloadFilename() {
+    const namePart = sanitizeForFilename(name) || '이름'
+    return `클릭온AI_에코스섬의비밀_${stageLabel}_${namePart}.png`
+  }
+
   async function doSave() {
     const dataUrl = await renderCertificateDataUrl(imageSrc, { institution, name })
     const a = document.createElement('a')
     a.href = dataUrl
-    a.download = '인증서_ecos.png'
+    a.download = buildDownloadFilename()
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -139,21 +151,23 @@ export default function CodingPartyCertificate({
     <div className="cpCertCard">
       <img src={imageSrc} alt="인증서" className="cpCertCardImg" />
       <span className="cpCertDate">{todayKorean()}</span>
-      <input
-        type="text"
-        className="cpCertInstitutionInput"
-        placeholder="소속기관(OO초등학교, OO기관)"
-        value={institution}
-        onChange={(e) => setInstitution(e.target.value)}
-      />
-      <input
-        type="text"
-        className="cpCertNameInput"
-        placeholder="이름"
-        value={name}
-        readOnly={isLoggedIn}
-        onChange={(e) => !isLoggedIn && setName(e.target.value)}
-      />
+      <div className="cpCertInfoRow">
+        <input
+          type="text"
+          className="cpCertInstitutionInput"
+          placeholder="소속기관(OO초등학교, OO기관)"
+          value={institution}
+          onChange={(e) => setInstitution(e.target.value)}
+        />
+        <input
+          type="text"
+          className="cpCertNameInput"
+          placeholder="이름"
+          value={name}
+          readOnly={isLoggedIn}
+          onChange={(e) => !isLoggedIn && setName(e.target.value)}
+        />
+      </div>
       <img src={saveBtnSrc} alt="저장하기" className="cpCertSaveBtn" onClick={() => setPendingAction('save')} />
       <img src={printBtnSrc} alt="인쇄하기" className="cpCertPrintBtn" onClick={() => setPendingAction('print')} />
 
