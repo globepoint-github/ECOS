@@ -21,12 +21,14 @@ function getRawCookie(name) {
   return match ? match[1] : null
 }
 
-// CHG 등 다른 게임들과 동일한 만료 정책: 로그인 사용자는 고정 만료일(1년),
+// DTI 등 다른 게임들과 동일한 만료 정책: 로그인 사용자는 고정 만료일(코딩파티 시즌 종료일),
 // 비로그인 사용자는 3시간 — 비로그인은 오래 붙잡아둘 이유가 없고, 다른 게임들도
 // 다 이렇게 짧게 만료시키고 있어서 맞춤.
+const LOGIN_COOKIE_EXPIRES_AT = new Date('2026-11-22T00:00+09:00')
+
 function cookieExpiresFor(isLoggedIn) {
-  const ms = isLoggedIn ? 365 * 864e5 : 3 * 60 * 60 * 1000
-  return new Date(Date.now() + ms).toUTCString()
+  if (isLoggedIn) return LOGIN_COOKIE_EXPIRES_AT.toUTCString()
+  return new Date(Date.now() + 3 * 60 * 60 * 1000).toUTCString()
 }
 
 function writeCookieObject(isLoggedIn, cookieName, obj) {
