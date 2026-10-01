@@ -9,12 +9,23 @@ function toQueryString(params) {
   return usp.toString()
 }
 
+// 서버가 POST 본문을 JSON으로 파싱하는 게 아니라 일반 폼 파라미터(request.getParameter)로
+// 읽는 것으로 보임 — application/json으로 그냥 보내면 응답의 "requestParam"이 {}로 와서
+// 서버가 파라미터를 하나도 못 받은 것으로 확인됨(userInfoSave.do 저장 실패의 실제 원인).
+// ※ "requestParam"은 클라이언트가 보내야 하는 필드명이 아니라, 서버가 실제로 파싱해낸
+//   파라미터를 그대로 돌려주는 응답 전용(echo) 필드 — CHG/DTI 등 정상 동작하는 다른
+//   게임들도 전부 FormData(multipart/form-data)에 cpid/cpYear 등을 개별 필드로 append해서
+//   보내고 있는 것으로 확인되어 동일한 방식으로 맞춤. (Content-Type은 브라우저가 FormData의
+//   multipart boundary를 자동으로 채워야 하므로 직접 지정하지 않음)
 async function postJson(url, body) {
+  const form = new FormData()
+  Object.entries(body).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) form.append(key, value)
+  })
   const res = await fetch(url, {
     method: 'POST',
     credentials: 'include', // JSESSIONID 쿠키 자동 전송
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: form,
   })
   return res.json()
 }

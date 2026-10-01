@@ -562,8 +562,6 @@ html, body, #root {
 }
 
 /* ===== 코딩파티 인증서 (일반판 .cert* 클래스와 완전히 분리 — 세로형 620x880 이미지 기준) ===== */
-/* 팝업 창이 정확히 620x880으로 안 맞아도(브라우저 제목표시줄 등으로 오차 생김) 항상
-   딱 이 크기로 화면 가운데 표시되도록, 바깥 컨테이너를 고정 크기+가운데 정렬로 처리 */
 .cpCertPageOuter {
   width: 100vw;
   height: 100vh;
@@ -574,17 +572,24 @@ html, body, #root {
   justify-content: center;
 }
 
+/* 카드(이미지, 620x880 고정)와 그 아래 저장/인쇄 버튼 줄을 세로로 쌓는 바깥 컨테이너.
+   버튼 줄만큼 전체 높이가 880보다 커지므로, 이 팝업을 여는 window.open 크기
+   (NormalStagePage.jsx의 CP_CERT_POPUP_FEATURES)도 그만큼 더 크게 맞춰둠. */
 .cpCertPage {
   position: relative;
   width: 620px;
-  height: 880px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   container-type: inline-size;
 }
 
 .cpCertCard {
+  position: relative;
   width: 100%;
-  height: 100%;
+  height: 880px;
+  flex-shrink: 0;
 }
 
 .cpCertCardImg {
@@ -594,27 +599,34 @@ html, body, #root {
 }
 
 .cpCertDate {
-  /* ※ 정확한 좌표 미정 — 이미지 보고 대략 잡은 위치, 확인 후 조정 필요 */
+  /* 이 이미지엔 날짜 전용 표시 영역이 없어서, 본문과 일러스트 사이 빈 공간에 작게 표시 */
   position: absolute;
   left: 50%;
-  top: 80%; /* 81.25%에서 살짝 위로 */
+  top: 73%;
   transform: translateX(-50%);
   color: #000000;
   font-family: 'Oagothic', 'Noto Sans KR', sans-serif;
   font-weight: 800;
-  font-size: 2.42cqw; /* 15 / 620 */
+  font-size: 2.1cqw; /* 13 / 620 */
   letter-spacing: 0;
   white-space: nowrap;
   -webkit-text-stroke: 0.35px currentColor;
 }
 
+/* 저장/인쇄 버튼 — 인증서 이미지 안에 겹쳐놓지 않고, DTI판처럼 카드 아래 별도 줄에 배치 */
+.cpCertFooter {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  justify-content: center;
+  padding: 0.75rem 0;
+  width: 100%;
+}
+
 .cpCertSaveBtn,
 .cpCertPrintBtn {
-  /* ※ 위치 미정 — 임시로 날짜 아래(하단 로고줄 위)에 배치, 확인 후 조정 필요 */
-  position: absolute;
-  top: 84.5%;
-  width: 28%;   /* 174 / 620 */
-  height: 5.45%; /* 48 / 880 */
+  width: 160px;
+  height: auto; /* 174:48 원본 비율 유지 */
   cursor: pointer;
   transition: transform 0.15s ease, filter 0.15s ease;
 }
@@ -625,44 +637,36 @@ html, body, #root {
   filter: brightness(1.1);
 }
 
-.cpCertSaveBtn { left: 13%; }
-.cpCertPrintBtn { left: 59%; }
-
-/* 소속기관/이름 입력칸 — DTI판 구현 방식(flexbox, 밑줄 없음, 고정 폰트 크기)과 동일하게 맞춤.
-   각 필드를 좌표(left/width %)로 따로 잡던 방식에서, 감싸는 줄(.cpCertInfoRow)을
-   flexbox로 배치하고 그 안에서 flex:1로 나눠 갖는 방식으로 변경. */
-.cpCertInfoRow {
-  position: absolute;
-  top: 48.6%; /* 428 / 880 */
-  left: 9.7%;  /* 60 / 620 */
-  right: 11.5%; /* 620 - (400+150) = 70 → 11.3%, 기존 필드들의 오른쪽 끝과 맞춤 */
-  transform: translateY(-50%);
-  display: flex;
-  gap: 2.5rem;
-}
-
+/* 소속기관/이름 입력칸 — 이미지에 박혀있는 "기관명"/"이름" 라벨(세로로 2줄, 왼쪽~33% 위치)
+   바로 오른쪽에 입력값이 오도록 배치. 좌표는 이미지 픽셀 분석으로 확인한 실측값
+   (컴포넌트 안 INSTITUTION_Y/NAME_Y 등 주석 참고). 이미지가 라벨 위치를 오른쪽→왼쪽으로
+   바꿔서 다시 와서, 입력값도 라벨 왼쪽(오른쪽 정렬) → 라벨 오른쪽(왼쪽 정렬)으로 변경. */
 .cpCertInstitutionInput,
 .cpCertNameInput {
-  min-width: 0;
+  position: absolute;
   border: none;
   outline: none; /* 클릭(포커스) 시 뜨는 브라우저 기본 테두리 제거 */
   background: transparent;
   color: #000000;
   font-family: 'Oagothic', 'Noto Sans KR', sans-serif;
   font-weight: 900;
-  font-size: 18px;
+  font-size: 16px;
+  text-align: left;
   padding: 0;
 }
 
-/* "소속기관(OO초등학교, OO기관)" placeholder가 "이름"보다 훨씬 길어서 1:1로 나누면
-   소속기관 쪽 글자가 잘림 — 기존 좌표 방식 비율(46%:24% ≈ 2:1)에 맞춰 flex 비율을 다르게 줌 */
 .cpCertInstitutionInput {
-  flex: 2;
-  text-align: right;
+  top: 40.7%; /* 358 / 880, "기관명" 라벨과 같은 줄 */
+  left: 34.7%; /* 215 / 620, "기관명" 라벨 바로 뒤 */
+  width: 57%;
+  transform: translateY(-50%);
 }
 
 .cpCertNameInput {
-  flex: 1;
+  top: 43.2%; /* 380 / 880, "이름" 라벨과 같은 줄 */
+  left: 34.7%; /* 215 / 620, "이름" 라벨 바로 뒤 */
+  width: 57%;
+  transform: translateY(-50%);
 }
 
 .cpCertNameInput[readonly] {

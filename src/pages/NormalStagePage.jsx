@@ -1,27 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getMissionList, saveCpUserInfo } from '../api/gameApi'
+import { getMissionList } from '../api/gameApi'
 import { CP_SEASON, CP_YEAR } from '../api/config'
-import { getOrCreateCpId, markCpStarted, saveCpUserCodeToCookie } from '../utils/cpId'
-import { hasSavedCpUserCode, markCpUserCodeSaved } from '../utils/cpUserCode'
+import { getOrCreateCpId, markCpStarted } from '../utils/cpId'
 import { withBase } from '../utils/withBase'
 import { useContainSize } from '../utils/useContainSize'
 
 const DEFAULT_ROCKET = withBase('/images/제목 없음-3 2.png')
 const CERT_POPUP_FEATURES = 'width=1050,height=700,noopener' // 일반판 가로형(1200x800) 인증서용
-// 코딩파티 세로형(620x880) 인증서. 카드 자체는 이제 항상 620x880 고정 + 가운데 정렬이라
-// 팝업 창 크기를 픽셀 단위로 정확히 안 맞춰도 됨 — 여유 있게 잡아서 절대 안 잘리게만 함
-const CP_CERT_POPUP_FEATURES = 'width=620,height=880,noopener'
-
-// 코딩파티 사용자 코드 (게임 시작 시 1회 선택)
-const CP_USER_CODES = [
-  { code: '001', label: '유아' },
-  { code: '002', label: '초등 저학년(1~3학년)' },
-  { code: '003', label: '초등 고학년(4~6학년)' },
-  { code: '004', label: '중등' },
-  { code: '005', label: '고등' },
-  { code: '006', label: '성인' },
-  { code: '007', label: '기타' },
-]
+// 코딩파티 세로형(620x880) 인증서 + 카드 아래 저장/인쇄 버튼 줄(약 68px)까지 포함한 크기에
+// 딱 맞춤(여백 최소화)
+const CP_CERT_POPUP_FEATURES = 'width=624,height=952,noopener'
 
 // 스테이지 1개당 필요한 에셋/위치 정보.
 // lockUnlocked가 없는 스테이지(1번)는 자체 파일이 이미 "이용 가능" 색상이라 별도 상태가 없음.
@@ -108,8 +96,6 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
   const [showLockedPopup, setShowLockedPopup] = useState(false)
   const [showCertLockedPopup, setShowCertLockedPopup] = useState(false)
   const [cpId, setCpId] = useState(null)
-  const [showCpUserCodePopup, setShowCpUserCodePopup] = useState(false)
-  const [selectedCpUserCode, setSelectedCpUserCode] = useState(CP_USER_CODES[0].code)
   const selectStageRef = useRef(null)
   const { width: sceneWidth, height: sceneHeight } = useContainSize(selectStageRef, 1920 / 1080)
 
@@ -117,7 +103,8 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
 
   // cpId 쿠키는 일반/코딩파티 상관없이 항상 만들어야 함 — 유니티 게임이 모드와 무관하게
   // 무조건 cpEcoLoginUser/cpEcoNonLoginUser 쿠키에서 cpid를 읽으려고 시도하기 때문.
-  // (사용자 코드 선택 팝업/저장은 코딩파티일 때만 진행)
+  // (연령대 선택 팝업은 더 이상 여기서 띄우지 않음 — 게임 접속 시점이 아니라 인증서
+  // 발급 시점에 뜨도록 CertificatePage.jsx로 이동함)
   useEffect(() => {
     if (session.status === 'loading') return
     const id = getOrCreateCpId(session.status === 'SUCCESS')
@@ -125,7 +112,6 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
     // 이 스테이지 화면에 들어왔다는 것 자체를 쿠키에 남겨둠 — 랜딩 화면(NormalMainPage.jsx)이
     // 새로고침 후에도 "이미 시작한 사용자"를 바로 여기로 되돌려보내는 데 씀
     if (isCodingParty) markCpStarted(session.status === 'SUCCESS')
-    if (isCodingParty && !hasSavedCpUserCode(id)) setShowCpUserCodePopup(true)
   }, [isCodingParty, session.status])
 
   // API에 보낼 사용자 식별 파라미터. 코딩파티는 cpId 기준(로그인 시 userSn도 같이),
@@ -185,26 +171,6 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
     window.addEventListener('focus', refreshProgress)
     return () => window.removeEventListener('focus', refreshProgress)
   }, [isCodingParty, userSn, cpId, refreshProgress])
-
-  async function handleSubmitCpUserCode() {
-    setShowCpUserCodePopup(false)
-    if (!cpId) return
-    // 쿠키에 cpUserCode를 같이 저장 — 다른 게임들처럼 cpid 쿠키 안에 cpUserCode까지
-    // 들어있어야 유니티가 정상적으로 읽는 것으로 보여서(서버 API 저장과는 별개로) 추가
-    saveCpUserCodeToCookie(session.status === 'SUCCESS', selectedCpUserCode)
-    try {
-      await saveCpUserInfo({
-        cpid: cpId,
-        cpYear: CP_YEAR,
-        cpSeason: CP_SEASON,
-        cpUserCode: selectedCpUserCode,
-        ...(userSn ? { userSn } : {}),
-      })
-      markCpUserCodeSaved(cpId)
-    } catch {
-      // 서버 연동 안 되는 환경(로컬 등)에서는 조용히 무시
-    }
-  }
 
   function handleStageClick(n) {
     if (!unlocked.has(n)) {
@@ -340,31 +306,6 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
                   </svg>
                 </button>
                 <button type="button" className="lockedPopupBtn" onClick={() => setShowCertLockedPopup(false)}>닫기</button>
-              </div>
-            </div>
-          )}
-
-          {showCpUserCodePopup && (
-            <div className="cpUserCodeOverlay">
-              <div className="cpUserCodePopup">
-                <div className="cpUserCodeHeader">아래 정보를 입력해주세요</div>
-                <div className="cpUserCodeForm">
-                  <div className="cpUserCodeRow">
-                    <span className="cpUserCodeLabel">연령</span>
-                    <select
-                      className="cpUserCodeSelect"
-                      value={selectedCpUserCode}
-                      onChange={(e) => setSelectedCpUserCode(e.target.value)}
-                    >
-                      {CP_USER_CODES.map(({ code, label }) => (
-                        <option key={code} value={code}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <button type="button" className="cpUserCodeStartBtn" onClick={handleSubmitCpUserCode}>
-                    시작하기
-                  </button>
-                </div>
               </div>
             </div>
           )}

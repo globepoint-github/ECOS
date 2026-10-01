@@ -2,18 +2,22 @@ import { useEffect, useState } from 'react'
 import { withBase } from '../utils/withBase'
 
 // 코딩파티 인증서 전용 컴포넌트 (일반판 Certificate.jsx와 완전히 분리 — 일반판에 영향 없음)
-// 세로형(620x880) 이미지 기준. 기관/이름 입력칸은 좌표 미정이라 추후 추가 예정.
+// 2026_클릭온AI시즌2_에코스섬의비밀_*.jpg 세로형(621x880) 이미지 기준.
 const CANVAS_W = 620
 const CANVAS_H = 880
 
-// ※ 정확한 좌표 아직 안 받아서 이미지 보고 대략 잡은 위치 — 실제로 보고 조정 필요
-const DATE_POS = { x: CANVAS_W / 2, y: 704 } // 80% of 880
-const DATE_FONT_SIZE = 15
+// 날짜는 이 이미지엔 별도 표시 영역이 없어서(기존 코딩파티인증서.jpg와 달리), 본문/일러스트
+// 사이 빈 공간에 작게 표시 — 실제로 보고 조정 필요
+const DATE_POS = { x: CANVAS_W / 2, y: 642 } // 73% of 880
+const DATE_FONT_SIZE = 13
 
-// 소속기관/이름 입력칸 — 타이틀과 본문 사이 빈 줄 위치, 마찬가지로 좌표 미정이라 추후 조정 필요
-const INFO_Y = 428 // ~48.6% of 880
-const INSTITUTION_CENTER_X = 203 // 소속기관 입력칸 중앙 정렬: (9.7% + 46%/2) of 620
-const NAME_X = 400 // ~64.5% of 620
+// 소속기관/이름 입력칸 — 이미지에 박혀있는 "기관명"/"이름" 라벨(세로로 2줄) 바로 오른쪽에
+// 입력값이 오도록 함. 좌표는 이미지 픽셀 분석으로 확인한 실측값.
+// (라벨이 이미지 왼쪽(~33%)으로 재배치되면서 입력값 위치도 라벨 오른쪽으로 변경됨 — Y좌표는 그대로)
+const INSTITUTION_Y = 358 // "기관명" 라벨과 같은 줄
+const INSTITUTION_LEFT_X = 215 // "기관명" 라벨 바로 뒤(오른쪽)
+const NAME_Y = 380 // "이름" 라벨과 같은 줄
+const NAME_LEFT_X = 215 // "이름" 라벨 바로 뒤(오른쪽)
 const INFO_FONT_SIZE = 16
 
 function todayKorean() {
@@ -54,15 +58,10 @@ async function renderCertificateDataUrl(imageSrc, { institution, name }) {
   ctx.fillText(todayKorean(), DATE_POS.x, DATE_POS.y)
 
   ctx.font = `800 ${INFO_FONT_SIZE}px Oagothic, "Noto Sans KR", sans-serif`
+  ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  if (institution) {
-    ctx.textAlign = 'center'
-    ctx.fillText(institution, INSTITUTION_CENTER_X, INFO_Y)
-  }
-  if (name) {
-    ctx.textAlign = 'left'
-    ctx.fillText(name, NAME_X, INFO_Y)
-  }
+  if (institution) ctx.fillText(institution, INSTITUTION_LEFT_X, INSTITUTION_Y)
+  if (name) ctx.fillText(name, NAME_LEFT_X, NAME_Y)
 
   return canvas.toDataURL('image/png')
 }
@@ -92,6 +91,16 @@ export default function CodingPartyCertificate({
   // 저장/인쇄 버튼 클릭 시 "발급 후 바로 파기됩니다" 안내 팝업을 먼저 띄우고,
   // 확인을 눌러야 실제 저장/인쇄가 진행되도록 함
   const [pendingAction, setPendingAction] = useState(null) // 'save' | 'print' | null
+  // 소속기관/이름 둘 다(로그인 여부 상관없이) 입력 안 하면 저장/인쇄 자체를 막음
+  const [showMissingFieldsPopup, setShowMissingFieldsPopup] = useState(false)
+
+  function handleActionClick(action) {
+    if (!institution.trim() || !name.trim()) {
+      setShowMissingFieldsPopup(true)
+      return
+    }
+    setPendingAction(action)
+  }
 
   // 파일명 형식: 클릭온AI_게임명_인증서단계_이름 (예: 클릭온AI_에코스섬의비밀_기초_홍길동)
   function buildDownloadFilename() {
@@ -148,14 +157,14 @@ export default function CodingPartyCertificate({
   }
 
   return (
-    <div className="cpCertCard">
-      <img src={imageSrc} alt="인증서" className="cpCertCardImg" />
-      <span className="cpCertDate">{todayKorean()}</span>
-      <div className="cpCertInfoRow">
+    <>
+      <div className="cpCertCard">
+        <img src={imageSrc} alt="인증서" className="cpCertCardImg" />
+        <span className="cpCertDate">{todayKorean()}</span>
         <input
           type="text"
           className="cpCertInstitutionInput"
-          placeholder="소속기관(OO초등학교, OO기관)"
+          placeholder="소속기관(OO초등학교,OO기관)"
           value={institution}
           onChange={(e) => setInstitution(e.target.value)}
         />
@@ -168,8 +177,12 @@ export default function CodingPartyCertificate({
           onChange={(e) => !isLoggedIn && setName(e.target.value)}
         />
       </div>
-      <img src={saveBtnSrc} alt="저장하기" className="cpCertSaveBtn" onClick={() => setPendingAction('save')} />
-      <img src={printBtnSrc} alt="인쇄하기" className="cpCertPrintBtn" onClick={() => setPendingAction('print')} />
+
+      {/* 저장/인쇄 버튼 — 인증서 카드 이미지 밖, 아래쪽 별도 영역(DTI판과 동일한 배치) */}
+      <div className="cpCertFooter">
+        <img src={saveBtnSrc} alt="저장하기" className="cpCertSaveBtn" onClick={() => handleActionClick('save')} />
+        <img src={printBtnSrc} alt="인쇄하기" className="cpCertPrintBtn" onClick={() => handleActionClick('print')} />
+      </div>
 
       {pendingAction && (
         <div className="cpCertNoticeOverlay" onClick={() => setPendingAction(null)}>
@@ -183,6 +196,18 @@ export default function CodingPartyCertificate({
           </div>
         </div>
       )}
-    </div>
+
+      {showMissingFieldsPopup && (
+        <div className="cpCertNoticeOverlay" onClick={() => setShowMissingFieldsPopup(false)}>
+          <div className="cpCertNoticePopup" onClick={(e) => e.stopPropagation()}>
+            <p className="cpCertNoticeText">
+              소속기관과 이름을 모두<br />
+              입력해주세요.
+            </p>
+            <button type="button" className="cpCertNoticeConfirmBtn" onClick={() => setShowMissingFieldsPopup(false)}>확인</button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
