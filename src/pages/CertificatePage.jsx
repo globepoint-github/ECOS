@@ -16,8 +16,11 @@ const CERT_DATA = {
 }
 
 // 코딩파티판 인증서 페이지. 일반판(NormalCertificatePage)과 완전히 분리된 별도 구현.
-// 연령대(cpUserCode) 선택 팝업은 여기서 띄우지 않음 — 원래대로 게임 접속(스테이지 화면,
-// NormalStagePage.jsx) 시점에 1회만 묻고, 인증서 발급 시에는 이미 저장된 값을 그대로 씀.
+// 연령대(cpUserCode) 선택 팝업은 여기서 띄우지 않음:
+//   - 비로그인: 스테이지 화면(게임 접속 시점)에서 띄움
+//   - 로그인: 스테이지 화면에서 "인증서 받기" 버튼 클릭 시 그 화면에서 띄우고,
+//     답변 직후에 이 인증서 창이 열림 (NormalStagePage.jsx의 handleCertClick 참고)
+// 즉 이 페이지가 열렸다는 것 자체가 이미 연령대 선택이 끝났다는 뜻이라, 그냥 발급만 하면 됨.
 export default function CertificatePage() {
   const { certId } = useParams()
   const { status, userName } = useUserSession()

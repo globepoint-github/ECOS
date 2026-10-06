@@ -102,23 +102,30 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
   // 기본 선택값으로 미리 채워두지 않음(select의 required 속성이 실제로 동작하려면
   // 빈 값에서 시작해야 함)
   const [selectedCpUserCode, setSelectedCpUserCode] = useState('')
+  // 로그인 사용자가 "인증서 받기"를 눌렀는데 아직 연령대를 안 골랐으면, 인증서 창을 바로
+  // 열지 않고 이 값에 열려던 인증서 URL을 담아뒀다가 연령대 답변 직후에 엶
+  const [pendingCertUrl, setPendingCertUrl] = useState(null)
   const selectStageRef = useRef(null)
   const { width: sceneWidth, height: sceneHeight } = useContainSize(selectStageRef, 1920 / 1080)
 
   const userSn = session?.userSn
+  const isLoggedIn = session.status === 'SUCCESS'
 
   // cpId 쿠키는 일반/코딩파티 상관없이 항상 만들어야 함 — 유니티 게임이 모드와 무관하게
   // 무조건 cpEcoLoginUser/cpEcoNonLoginUser 쿠키에서 cpid를 읽으려고 시도하기 때문.
-  // 연령대 선택 팝업은 원래대로 게임 접속(이 스테이지 화면 진입) 시점에 띄움 — cpid 기준으로
-  // 한 번 답하면 저장되어, 이후 스테이지 재진입/인증서 발급 어디서도 다시 묻지 않음.
+  // 연령대 선택 팝업 트리거 위치는 로그인 여부에 따라 다름:
+  //   - 비로그인: 게임 접속(이 스테이지 화면 진입) 시점에 띄움 (원래 위치)
+  //   - 로그인: 여기서는 안 띄우고, "인증서 받기" 버튼을 눌렀을 때 이 화면에 띄움
+  //     (handleCertClick 참고)
+  // 어느 쪽이든 cpid 쿠키에 cpUserCode가 이미 있으면(한 번 답하면) 다시 안 물어봄.
   useEffect(() => {
     if (session.status === 'loading') return
-    const id = getOrCreateCpId(session.status === 'SUCCESS')
+    const id = getOrCreateCpId(isLoggedIn)
     setCpId(id)
     // 이 스테이지 화면에 들어왔다는 것 자체를 쿠키에 남겨둠 — 랜딩 화면(NormalMainPage.jsx)이
     // 새로고침 후에도 "이미 시작한 사용자"를 바로 여기로 되돌려보내는 데 씀
-    if (isCodingParty) markCpStarted(session.status === 'SUCCESS')
-    if (isCodingParty && !hasCpUserCodeInCookie(session.status === 'SUCCESS')) setShowCpUserCodePopup(true)
+    if (isCodingParty) markCpStarted(isLoggedIn)
+    if (isCodingParty && !isLoggedIn && !hasCpUserCodeInCookie(false)) setShowCpUserCodePopup(true)
   }, [isCodingParty, session.status])
 
   // API에 보낼 사용자 식별 파라미터. 코딩파티는 cpId 기준(로그인 시 userSn도 같이),
@@ -185,7 +192,15 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
     if (!cpId) return
     // 쿠키에 cpUserCode를 먼저 저장(서버 응답 기다리지 않고 즉시) — 이게 곧
     // "이미 답했는지" 판단 기준이라, 서버 저장이 나중에 실패해도 다시 안 물어봄
-    saveCpUserCodeToCookie(session.status === 'SUCCESS', selectedCpUserCode)
+    saveCpUserCodeToCookie(isLoggedIn, selectedCpUserCode)
+    // "인증서 받기" 클릭 때문에 뜬 팝업이었으면, 원래 열려던 인증서를 지금 바로 엶 —
+    // await 뒤(비동기 완료 후)로 미루면 브라우저가 "사용자가 직접 눌러서 연 창"으로
+    // 인정 안 하고 팝업 차단을 걸 수 있어서, 아직 동기 흐름인 여기서 먼저 처리함
+    if (pendingCertUrl) {
+      const { url, features } = pendingCertUrl
+      setPendingCertUrl(null)
+      window.open(url, '_blank', features)
+    }
     try {
       await saveCpUserInfo({
         cpid: cpId,
@@ -197,6 +212,17 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
     } catch {
       // 서버 연동 안 되는 환경(로컬 등)에서는 조용히 무시
     }
+  }
+
+  // 인증서 버튼 클릭 — 로그인 사용자가 아직 연령대를 안 골랐으면 인증서를 바로 열지 않고
+  // 이 화면에 연령선택 팝업부터 띄움(답하면 그 직후 인증서가 열림). 그 외엔 바로 염.
+  function handleCertClick(url, features) {
+    if (isLoggedIn && !hasCpUserCodeInCookie(true)) {
+      setPendingCertUrl({ url, features })
+      setShowCpUserCodePopup(true)
+      return
+    }
+    window.open(url, '_blank', features)
   }
 
   function handleStageClick(n) {
@@ -292,7 +318,7 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
             className="certBtn cert1"
             onClick={() =>
               cert1Active
-                ? window.open(withBase(`${certPathPrefix}/certificate/1`), '_blank', certPopupFeatures)
+                ? handleCertClick(withBase(`${certPathPrefix}/certificate/1`), certPopupFeatures)
                 : setShowCertLockedPopup(true)
             }
           />
@@ -302,7 +328,7 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
             className="certBtn cert2"
             onClick={() =>
               cert2Active
-                ? window.open(withBase(`${certPathPrefix}/certificate/2`), '_blank', certPopupFeatures)
+                ? handleCertClick(withBase(`${certPathPrefix}/certificate/2`), certPopupFeatures)
                 : setShowCertLockedPopup(true)
             }
           />
