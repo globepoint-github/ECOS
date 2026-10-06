@@ -562,13 +562,19 @@ html, body, #root {
 }
 
 /* ===== 코딩파티 인증서 (일반판 .cert* 클래스와 완전히 분리 — 세로형 620x880 이미지 기준) ===== */
+/* 팝업 창이 실제로 뜰 때 브라우저/운영체제 설정에 따라 요청한 크기(width=624,height=952)보다
+   작게 열리는 경우가 있음 — overflow:hidden + 세로 가운데 정렬이었던 탓에, 창이 내용보다
+   작으면 스크롤도 안 되고 아래쪽(저장/인쇄 버튼)이 그냥 잘려서 안 보이는 문제가 있었음.
+   세로 정렬을 위쪽 기준으로 바꾸고 overflow-y:auto로 바꿔서, 창이 작아도 스크롤해서
+   끝까지 볼 수 있게 함. */
 .cpCertPageOuter {
   width: 100vw;
   height: 100vh;
   background: #eef3f8;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 }
 

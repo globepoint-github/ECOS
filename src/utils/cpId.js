@@ -24,7 +24,7 @@ function getRawCookie(name) {
 // DTI 등 다른 게임들과 동일한 만료 정책: 로그인 사용자는 고정 만료일(코딩파티 시즌 종료일),
 // 비로그인 사용자는 3시간 — 비로그인은 오래 붙잡아둘 이유가 없고, 다른 게임들도
 // 다 이렇게 짧게 만료시키고 있어서 맞춤.
-const LOGIN_COOKIE_EXPIRES_AT = new Date('2026-11-22T00:00+09:00')
+const LOGIN_COOKIE_EXPIRES_AT = new Date('2026-11-17T00:00+09:00')
 
 function cookieExpiresFor(isLoggedIn) {
   if (isLoggedIn) return LOGIN_COOKIE_EXPIRES_AT.toUTCString()
@@ -100,4 +100,14 @@ export function markCpStarted(isLoggedIn) {
 export function hasCpStarted(isLoggedIn) {
   const cookieName = isLoggedIn ? LOGIN_COOKIE : NON_LOGIN_COOKIE
   return !!parseCookieObject(cookieName)?.started
+}
+
+// "이미 연령대(cpUserCode)를 선택했는지"는 서버 저장(API) 성공 여부와 별개로,
+// 쿠키 안에 cpUserCode 값이 있는지로 바로 판단함 (다른 게임들 — 마음정원 등 — 과 동일한
+// 방식). 쿠키는 로그인 시 시즌 종료일까지, 비로그인 시 3시간 유지되므로, 그 안에는
+// 다시 안 물어봄. saveCpUserCodeToCookie가 선택 즉시(서버 응답 기다리지 않고) 쿠키에
+// 저장하므로, 서버 저장 API가 실패해도 "또 물어보는" 문제가 없음.
+export function hasCpUserCodeInCookie(isLoggedIn) {
+  const cookieName = isLoggedIn ? LOGIN_COOKIE : NON_LOGIN_COOKIE
+  return !!parseCookieObject(cookieName)?.cpUserCode
 }

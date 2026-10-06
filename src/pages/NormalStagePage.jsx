@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getMissionList } from '../api/gameApi'
+import { getMissionList, saveCpUserInfo } from '../api/gameApi'
 import { CP_SEASON, CP_YEAR } from '../api/config'
-import { getOrCreateCpId, markCpStarted } from '../utils/cpId'
+import { getOrCreateCpId, hasCpUserCodeInCookie, markCpStarted, saveCpUserCodeToCookie } from '../utils/cpId'
+import { CP_USER_CODES } from '../utils/cpUserCodes'
 import { withBase } from '../utils/withBase'
 import { useContainSize } from '../utils/useContainSize'
 
@@ -96,6 +97,11 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
   const [showLockedPopup, setShowLockedPopup] = useState(false)
   const [showCertLockedPopup, setShowCertLockedPopup] = useState(false)
   const [cpId, setCpId] = useState(null)
+  const [showCpUserCodePopup, setShowCpUserCodePopup] = useState(false)
+  // 빈 값("선택")으로 시작 — "선택" 상태로 그냥 제출되는 걸 막기 위해 첫 옵션을
+  // 기본 선택값으로 미리 채워두지 않음(select의 required 속성이 실제로 동작하려면
+  // 빈 값에서 시작해야 함)
+  const [selectedCpUserCode, setSelectedCpUserCode] = useState('')
   const selectStageRef = useRef(null)
   const { width: sceneWidth, height: sceneHeight } = useContainSize(selectStageRef, 1920 / 1080)
 
@@ -103,8 +109,8 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
 
   // cpId 쿠키는 일반/코딩파티 상관없이 항상 만들어야 함 — 유니티 게임이 모드와 무관하게
   // 무조건 cpEcoLoginUser/cpEcoNonLoginUser 쿠키에서 cpid를 읽으려고 시도하기 때문.
-  // (연령대 선택 팝업은 더 이상 여기서 띄우지 않음 — 게임 접속 시점이 아니라 인증서
-  // 발급 시점에 뜨도록 CertificatePage.jsx로 이동함)
+  // 연령대 선택 팝업은 원래대로 게임 접속(이 스테이지 화면 진입) 시점에 띄움 — cpid 기준으로
+  // 한 번 답하면 저장되어, 이후 스테이지 재진입/인증서 발급 어디서도 다시 묻지 않음.
   useEffect(() => {
     if (session.status === 'loading') return
     const id = getOrCreateCpId(session.status === 'SUCCESS')
@@ -112,6 +118,7 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
     // 이 스테이지 화면에 들어왔다는 것 자체를 쿠키에 남겨둠 — 랜딩 화면(NormalMainPage.jsx)이
     // 새로고침 후에도 "이미 시작한 사용자"를 바로 여기로 되돌려보내는 데 씀
     if (isCodingParty) markCpStarted(session.status === 'SUCCESS')
+    if (isCodingParty && !hasCpUserCodeInCookie(session.status === 'SUCCESS')) setShowCpUserCodePopup(true)
   }, [isCodingParty, session.status])
 
   // API에 보낼 사용자 식별 파라미터. 코딩파티는 cpId 기준(로그인 시 userSn도 같이),
@@ -171,6 +178,26 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
     window.addEventListener('focus', refreshProgress)
     return () => window.removeEventListener('focus', refreshProgress)
   }, [isCodingParty, userSn, cpId, refreshProgress])
+
+  async function handleSubmitCpUserCode(e) {
+    e.preventDefault()
+    setShowCpUserCodePopup(false)
+    if (!cpId) return
+    // 쿠키에 cpUserCode를 먼저 저장(서버 응답 기다리지 않고 즉시) — 이게 곧
+    // "이미 답했는지" 판단 기준이라, 서버 저장이 나중에 실패해도 다시 안 물어봄
+    saveCpUserCodeToCookie(session.status === 'SUCCESS', selectedCpUserCode)
+    try {
+      await saveCpUserInfo({
+        cpid: cpId,
+        cpYear: CP_YEAR,
+        cpSeason: CP_SEASON,
+        cpUserCode: selectedCpUserCode,
+        ...(userSn ? { userSn } : {}),
+      })
+    } catch {
+      // 서버 연동 안 되는 환경(로컬 등)에서는 조용히 무시
+    }
+  }
 
   function handleStageClick(n) {
     if (!unlocked.has(n)) {
@@ -306,6 +333,33 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
                   </svg>
                 </button>
                 <button type="button" className="lockedPopupBtn" onClick={() => setShowCertLockedPopup(false)}>닫기</button>
+              </div>
+            </div>
+          )}
+
+          {showCpUserCodePopup && (
+            <div className="cpUserCodeOverlay">
+              <div className="cpUserCodePopup">
+                <div className="cpUserCodeHeader">아래 정보를 입력해주세요</div>
+                <form className="cpUserCodeForm" onSubmit={handleSubmitCpUserCode}>
+                  <div className="cpUserCodeRow">
+                    <span className="cpUserCodeLabel">연령</span>
+                    <select
+                      className="cpUserCodeSelect"
+                      value={selectedCpUserCode}
+                      required
+                      onChange={(e) => setSelectedCpUserCode(e.target.value)}
+                    >
+                      <option value="">선택</option>
+                      {CP_USER_CODES.map(({ code, label }) => (
+                        <option key={code} value={code}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button type="submit" className="cpUserCodeStartBtn">
+                    시작하기
+                  </button>
+                </form>
               </div>
             </div>
           )}
