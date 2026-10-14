@@ -14,8 +14,6 @@ const BG_BY_VARIANT = {
 
 const NO_SESSION = { status: 'loading', userSn: null }
 
-// isCodingParty/session은 코딩파티판(MainPage.jsx)에서만 넘어옴 — 일반판은 이 자동 이동
-// 대상이 아니므로 기본값(undefined session)이면 아래 체크 로직이 그냥 조용히 스킵됨.
 export default function NormalMainPage({ isCodingParty = false, session = NO_SESSION }) {
   const navigate = useNavigate()
   const manualRef = useRef(null)
@@ -34,20 +32,31 @@ export default function NormalMainPage({ isCodingParty = false, session = NO_SES
     return () => window.removeEventListener('resize', syncStartButtonWidth)
   }, [])
 
-  // 이솝 쪽 새로고침이 항상 이 랜딩 주소(/coding-party)로 떨어지는 구조라 —
-  // 스테이지 화면에 있던 사용자가 새로고침하면 "스테이지에 있었다"는 걸 서버/URL로
-  // 전달할 방법이 없어 인트로로 보이는 문제가 있었음.
+  // 이솝 쪽 새로고침이 항상 이 랜딩 주소로 떨어지는 구조라 — 스테이지 화면에 있던
+  // 사용자가 새로고침하면 "스테이지에 있었다"는 걸 서버/URL로 전달할 방법이 없어
+  // 인트로로 보이는 문제가 있었음 (일반판/코딩파티판 공통).
   // 미션을 하나라도 "클리어"해야 진행 중으로 치는 게 아니라 START를 눌러 스테이지에
   // 한 번이라도 들어간 적이 있으면 바로 인정해야 하므로, 서버 진행도 조회 없이
   // 쿠키에 남겨둔 시작 플래그(markCpStarted, NormalStagePage.jsx)만 동기적으로 확인함.
   useEffect(() => {
-    if (!isCodingParty) return
     if (session.status === 'loading') return
 
     if (hasCpStarted(session.status === 'SUCCESS')) {
       navigate('stage', { replace: true })
     }
-  }, [isCodingParty, session.status, navigate])
+  }, [session.status, navigate])
+
+  // START 버튼 — 일반판은 로그인이 필수라, 로그인 안 된 상태면 스테이지로 보내지 않고
+  // EBS SSO 로그인 페이지로 전체 리다이렉트(로그인 성공하면 returnUrl로 다시 이 페이지로
+  // 돌아옴). 코딩파티판은 비로그인도 허용해야 해서 이 가드 없이 그냥 스테이지로 이동.
+  function handleStart() {
+    if (!isCodingParty && session.status !== 'SUCCESS') {
+      const returnUrl = encodeURIComponent(window.location.href)
+      window.top.location.href = `/sso/loginView.do?returnUrl=${returnUrl}`
+      return
+    }
+    navigate('stage')
+  }
 
   return (
     <div className="page">
@@ -71,7 +80,7 @@ export default function NormalMainPage({ isCodingParty = false, session = NO_SES
               className="btnManual"
               ref={manualRef}
             >매뉴얼 다운로드</a>
-            <button type="button" className="btnStart" ref={startRef} onClick={() => navigate('stage')}>START</button>
+            <button type="button" className="btnStart" ref={startRef} onClick={handleStart}>START</button>
           </div>
         </footer>
       </div>

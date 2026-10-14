@@ -532,6 +532,26 @@ html, body, #root {
   -webkit-text-stroke: 0.35px currentColor;
 }
 
+/* 이름 입력칸 — 인증서 이미지 안에 미리 그려진 빈 네모 칸(색 블록) 자리에 그대로 겹쳐서
+   입력받음(배경은 투명 — 이미지에 이미 그려진 색 블록이 그대로 보임). 좌표는 이미지
+   픽셀 분석으로 확인한 실측값(두 인증서 이미지 공통). */
+.certNameInput {
+  position: absolute;
+  left: 44.75%;
+  top: 42.25%;
+  width: 10.42%;
+  transform: translateY(-50%);
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #000000;
+  text-align: center;
+  font-family: 'Oagothic', 'Noto Sans KR', sans-serif;
+  font-weight: 700;
+  font-size: 1.5cqw;
+  padding: 0;
+}
+
 .certSaveBtn,
 .certPrintBtn {
   position: absolute;

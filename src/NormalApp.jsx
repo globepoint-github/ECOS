@@ -11,7 +11,7 @@ export default function NormalApp() {
 
   return (
     <Routes>
-      <Route path="/" element={<NormalMainPage />} />
+      <Route path="/" element={<NormalMainPage session={session} />} />
       <Route path="/stage" element={<NormalStagePage session={session} />} />
       <Route path="/certificate/:certId" element={<NormalCertificatePage />} />
     </Routes>

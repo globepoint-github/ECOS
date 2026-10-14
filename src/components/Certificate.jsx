@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { withBase } from '../utils/withBase'
 
 // 인증서 배경(1200x800) 안의 날짜 위치 (픽셀 기준, %로 환산해서 CSS에도 동일하게 사용)
@@ -6,6 +7,11 @@ const CANVAS_H = 800
 
 const DATE_POS = { x: 543, y: 515 + 16 / 2 } // Figma: X543 Y515, H16 Hug → 세로 중앙 기준으로 보정
 const DATE_FONT_SIZE = 12.34
+
+// 이름 입력칸 — 인증서 이미지 안에 미리 그려져 있는 빈 네모 칸(색 블록) 위치.
+// 이미지 픽셀 분석으로 확인한 실측값(두 인증서 이미지 다 동일한 위치).
+const NAME_POS = { x: 599, y: 338 } // (537~662, 318~358)px의 중앙
+const NAME_FONT_SIZE = 18
 
 function todayKorean() {
   const d = new Date()
@@ -23,11 +29,11 @@ function loadImage(src) {
   })
 }
 
-// 이름 입력 기능은 추후 입력 항목이 정해지면 다시 추가 예정. 지금은 날짜만 그림.
-async function renderCertificateDataUrl(imageSrc) {
+async function renderCertificateDataUrl(imageSrc, { name }) {
   const bg = await loadImage(imageSrc)
   try {
     await document.fonts.load(`500 ${DATE_FONT_SIZE}px Oagothic`)
+    await document.fonts.load(`700 ${NAME_FONT_SIZE}px Oagothic`)
   } catch {
     // 폰트 로드 실패해도 폴백 폰트로 계속 진행
   }
@@ -50,6 +56,13 @@ async function renderCertificateDataUrl(imageSrc) {
   ctx.strokeText(todayKorean(), DATE_POS.x, DATE_POS.y)
   ctx.fillText(todayKorean(), DATE_POS.x, DATE_POS.y)
 
+  if (name) {
+    ctx.font = `700 ${NAME_FONT_SIZE}px Oagothic, "Noto Sans KR", sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(name, NAME_POS.x, NAME_POS.y)
+  }
+
   return canvas.toDataURL('image/png')
 }
 
@@ -58,8 +71,14 @@ export default function Certificate({
   saveBtnSrc = withBase('/images/인증서/저장하기버튼.png'),
   printBtnSrc = withBase('/images/인증서/인쇄하기버튼.png'),
 }) {
+  const [name, setName] = useState('')
+
   async function handleSave() {
-    const dataUrl = await renderCertificateDataUrl(imageSrc)
+    if (!name.trim()) {
+      window.alert('이름을 입력해 주세요.')
+      return
+    }
+    const dataUrl = await renderCertificateDataUrl(imageSrc, { name })
     const a = document.createElement('a')
     a.href = dataUrl
     a.download = '인증서_ecos.png'
@@ -69,7 +88,11 @@ export default function Certificate({
   }
 
   async function handlePrint() {
-    const dataUrl = await renderCertificateDataUrl(imageSrc)
+    if (!name.trim()) {
+      window.alert('이름을 입력해 주세요.')
+      return
+    }
+    const dataUrl = await renderCertificateDataUrl(imageSrc, { name })
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
     printWindow.document.write(`
@@ -87,6 +110,13 @@ export default function Certificate({
     <div className="certCard">
       <img src={imageSrc} alt="인증서" className="certCardImg" />
       <span className="certDate">{todayKorean()}</span>
+      <input
+        type="text"
+        className="certNameInput"
+        placeholder="이름"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
       <img src={saveBtnSrc} alt="저장하기" className="certSaveBtn" onClick={handleSave} />
       <img src={printBtnSrc} alt="인쇄하기" className="certPrintBtn" onClick={handlePrint} />
     </div>

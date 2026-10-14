@@ -124,7 +124,8 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
     setCpId(id)
     // 이 스테이지 화면에 들어왔다는 것 자체를 쿠키에 남겨둠 — 랜딩 화면(NormalMainPage.jsx)이
     // 새로고침 후에도 "이미 시작한 사용자"를 바로 여기로 되돌려보내는 데 씀
-    if (isCodingParty) markCpStarted(isLoggedIn)
+    // (일반판/코딩파티판 공통 — 둘 다 같은 "스테이지 끝나면 메인으로 돌아가는" 문제가 있었음)
+    markCpStarted(isLoggedIn)
     if (isCodingParty && !isLoggedIn && !hasCpUserCodeInCookie(false)) setShowCpUserCodePopup(true)
   }, [isCodingParty, session.status])
 
