@@ -215,10 +215,11 @@ export default function NormalStagePage({ gamePath = withBase('/game'), session 
     }
   }
 
-  // 인증서 버튼 클릭 — 로그인 사용자가 아직 연령대를 안 골랐으면 인증서를 바로 열지 않고
-  // 이 화면에 연령선택 팝업부터 띄움(답하면 그 직후 인증서가 열림). 그 외엔 바로 염.
+  // 인증서 버튼 클릭 — 연령선택은 코딩파티 전용 로직. 코딩파티 + 로그인 사용자가 아직
+  // 연령대를 안 골랐으면 인증서를 바로 열지 않고 이 화면에 연령선택 팝업부터 띄움
+  // (답하면 그 직후 인증서가 열림). 일반판이거나 이미 답한 경우엔 바로 염.
   function handleCertClick(url, features) {
-    if (isLoggedIn && !hasCpUserCodeInCookie(true)) {
+    if (isCodingParty && isLoggedIn && !hasCpUserCodeInCookie(true)) {
       setPendingCertUrl({ url, features })
       setShowCpUserCodePopup(true)
       return
