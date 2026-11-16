@@ -71,7 +71,7 @@ export default function NormalMainPage({ isCodingParty = false, session = NO_SES
         </div>
 
         <footer className="footer">
-          <img src={withBase('/images/이솜로고.png')} alt="이솜 EBS 소프트웨어 x VRWARE" className="logo" />
+          <img src={withBase('/images/AI이솦_로고+VRWARE_어두운 배경.png')} alt="AI 이솦 EBS 소프트웨어 x VRWARE" className="logo" />
           <div className="buttons">
             <a
               href={withBase('/docs/manual.pdf')}

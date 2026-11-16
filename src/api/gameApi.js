@@ -48,7 +48,7 @@ async function getJson(url) {
 //   같지만, DTI가 굳이 호스트명으로 조건을 나눠둔 걸 보면 개발기는 그 뒷부분까지 포함된
 //   전체 값을 그대로 보내야 서버가 세션을 찾는 것으로 보임 — DTI와 동일하게 운영기에서만 자름.
 export function getUserSession() {
-  const isDev = window.location.hostname === 'dev-www.ebssw.kr'
+  const isDev = window.location.hostname === 'dev-www.ebsai.co.kr'
   const rawJsessionId = getCookie('JSESSIONID')
   const jsessionId = isDev ? rawJsessionId : rawJsessionId?.split('.')[0]
   const query = jsessionId ? `?${toQueryString({ JSESSIONID: jsessionId })}` : ''
