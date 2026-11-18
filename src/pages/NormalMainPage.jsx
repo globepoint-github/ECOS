@@ -4,6 +4,7 @@ import { hasCpStarted } from '../utils/cpId'
 import { withBase } from '../utils/withBase'
 import { useAspectVariant } from '../utils/useAspectVariant'
 import { API_BASE_URL } from '../api/config'
+import { getMissionList } from '../api/gameApi'
 
 // 화면 비율 구간별 배경 이미지. 각 이미지는 그 비율에 맞게 새로 그려진 것이라
 // object-fit:cover로 꽉 채워도 인물/건물이 심하게 잘리지 않음.
@@ -35,17 +36,41 @@ export default function NormalMainPage({ isCodingParty = false, session = NO_SES
 
   // 이솝 쪽 새로고침이 항상 이 랜딩 주소로 떨어지는 구조라 — 스테이지 화면에 있던
   // 사용자가 새로고침하면 "스테이지에 있었다"는 걸 서버/URL로 전달할 방법이 없어
-  // 인트로로 보이는 문제가 있었음 (일반판/코딩파티판 공통).
-  // 미션을 하나라도 "클리어"해야 진행 중으로 치는 게 아니라 START를 눌러 스테이지에
-  // 한 번이라도 들어간 적이 있으면 바로 인정해야 하므로, 서버 진행도 조회 없이
-  // 쿠키에 남겨둔 시작 플래그(markCpStarted, NormalStagePage.jsx)만 동기적으로 확인함.
+  // 인트로로 보이는 문제가 있었음.
+  // 코딩파티판: 비로그인도 허용해서 서버 진행도 조회가 불가능할 수 있으므로, 쿠키에
+  // 남겨둔 시작 플래그(markCpStarted, NormalStagePage.jsx)만 동기적으로 확인함.
   useEffect(() => {
+    if (!isCodingParty) return
     if (session.status === 'loading') return
 
     if (hasCpStarted(session.status === 'SUCCESS')) {
       navigate('stage', { replace: true })
     }
-  }, [session.status, navigate])
+  }, [isCodingParty, session.status, navigate])
+
+  // 일반판: 로그인 필수라 서버 진행도(getMissionList)를 바로 조회할 수 있음 — 로그인 +
+  // 실제로 1스테이지 이상 클리어한 기록이 있을 때만 자동으로 스테이지 이동.
+  // (로그인했지만 아직 하나도 클리어 안 한 사용자는 랜딩에 그대로 둠 — START를 다시
+  // 눌러도 로그인 상태라 바로 스테이지로 들어가므로 추가 클릭 한 번 외엔 문제 없음)
+  useEffect(() => {
+    if (isCodingParty) return
+    if (session.status !== 'SUCCESS') return
+
+    let cancelled = false
+    getMissionList({ userSn: session.userSn })
+      .then((data) => {
+        if (cancelled) return
+        if (data?.result && data.resultData?.length > 0) {
+          navigate('stage', { replace: true })
+        }
+      })
+      .catch(() => {
+        // 조회 실패 시엔 그냥 랜딩에 둠 (START 눌러서 다시 들어가면 됨)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isCodingParty, session.status, session.userSn, navigate])
 
   // START 버튼 — 일반판은 로그인이 필수라, 로그인 안 된 상태면 스테이지로 보내지 않고
   // EBS SSO 로그인 페이지로 전체 리다이렉트(로그인 성공하면 returnUrl로 이동).
