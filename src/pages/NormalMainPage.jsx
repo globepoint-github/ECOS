@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { hasCpStarted } from '../utils/cpId'
 import { withBase } from '../utils/withBase'
 import { useAspectVariant } from '../utils/useAspectVariant'
+import { API_BASE_URL } from '../api/config'
 
 // 화면 비율 구간별 배경 이미지. 각 이미지는 그 비율에 맞게 새로 그려진 것이라
 // object-fit:cover로 꽉 채워도 인물/건물이 심하게 잘리지 않음.
@@ -47,11 +48,13 @@ export default function NormalMainPage({ isCodingParty = false, session = NO_SES
   }, [session.status, navigate])
 
   // START 버튼 — 일반판은 로그인이 필수라, 로그인 안 된 상태면 스테이지로 보내지 않고
-  // EBS SSO 로그인 페이지로 전체 리다이렉트(로그인 성공하면 returnUrl로 다시 이 페이지로
-  // 돌아옴). 코딩파티판은 비로그인도 허용해야 해서 이 가드 없이 그냥 스테이지로 이동.
+  // EBS SSO 로그인 페이지로 전체 리다이렉트(로그인 성공하면 returnUrl로 이동).
+  // returnUrl은 현재 페이지(.../eco) 주소가 아니라 이 게임 전용 진입 컨트롤러
+  // (/coding/ecoView.do)로 고정 — 다른 게임들과 동일한 로그인 후 진입 방식.
+  // 코딩파티판은 비로그인도 허용해야 해서 이 가드 없이 그냥 스테이지로 이동.
   function handleStart() {
     if (!isCodingParty && session.status !== 'SUCCESS') {
-      const returnUrl = encodeURIComponent(window.location.href)
+      const returnUrl = encodeURIComponent(`${API_BASE_URL}/coding/ecoView.do`)
       window.top.location.href = `/sso/loginView.do?returnUrl=${returnUrl}`
       return
     }

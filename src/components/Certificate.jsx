@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { withBase } from '../utils/withBase'
 
 // 인증서 배경(1200x800) 안의 날짜 위치 (픽셀 기준, %로 환산해서 CSS에도 동일하게 사용)
@@ -68,14 +67,13 @@ async function renderCertificateDataUrl(imageSrc, { name }) {
 
 export default function Certificate({
   imageSrc,
+  name = '',
   saveBtnSrc = withBase('/images/인증서/저장하기버튼.png'),
   printBtnSrc = withBase('/images/인증서/인쇄하기버튼.png'),
 }) {
-  const [name, setName] = useState('')
-
   async function handleSave() {
     if (!name.trim()) {
-      window.alert('이름을 입력해 주세요.')
+      window.alert('사용자 이름을 불러오지 못했습니다. 다시 시도해 주세요.')
       return
     }
     const dataUrl = await renderCertificateDataUrl(imageSrc, { name })
@@ -89,7 +87,7 @@ export default function Certificate({
 
   async function handlePrint() {
     if (!name.trim()) {
-      window.alert('이름을 입력해 주세요.')
+      window.alert('사용자 이름을 불러오지 못했습니다. 다시 시도해 주세요.')
       return
     }
     const dataUrl = await renderCertificateDataUrl(imageSrc, { name })
@@ -110,13 +108,7 @@ export default function Certificate({
     <div className="certCard">
       <img src={imageSrc} alt="인증서" className="certCardImg" />
       <span className="certDate">{todayKorean()}</span>
-      <input
-        type="text"
-        className="certNameInput"
-        placeholder="이름"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+      <span className="certNameText">{name}</span>
       <img src={saveBtnSrc} alt="저장하기" className="certSaveBtn" onClick={handleSave} />
       <img src={printBtnSrc} alt="인쇄하기" className="certPrintBtn" onClick={handlePrint} />
     </div>
